@@ -2,3 +2,4 @@ source_code
 *.log.*
 *.log
 **/__pycache__
+**/.nextflow

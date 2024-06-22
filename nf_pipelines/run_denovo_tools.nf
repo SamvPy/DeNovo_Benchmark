@@ -68,7 +68,7 @@ process CONTRANOVO {
 
     // Store the ContraNovo results
     publishDir "${params.denovo_results_dir}/contranovo", mode: "copy", saveAs: { filename ->
-        "${mgf_file.baseName}.csv"}, pattern: "*.csv"
+        "${mgf_file.baseName}.mztab"}, pattern: "*.mztab"
     publishDir "${params.denovo_results_dir}/contranovo", mode: "copy", saveAs: { filename ->
         "${mgf_file.baseName}.log"}, pattern: "*.log"
 
@@ -159,33 +159,64 @@ workflow {
     if (params.run_contranovo) {
         mgf_files = Channel.fromPath(params.mgf_files)
         config_contranovo = Channel.fromPath(params.config_contranovo)
-        (contranovo_result, serializer) = CONTRANOVO(mgf_files, config_contranovo.first(), serializer.first())
+
+        if (params.serialize) {
+            (contranovo_result, serializer) = CONTRANOVO(mgf_files, config_contranovo.first(), serializer.first())
+        }
+        else {
+            (contranovo_result, _) = CONTRANOVO(mgf_files, config_contranovo.first(), serializer.first())
+        }
+        
     }
 
 
     if (params.run_novob) {
         mgf_files = Channel.fromPath(params.mgf_files)
-        (novob_result, serializer) = NOVOB(mgf_files, serializer.first())
+
+        if (params.serialize) {
+            (novob_result, serializer) = NOVOB(mgf_files, serializer.first())
+        }
+        else {
+            (novob_result, _) = NOVOB(mgf_files, serializer.first())
+        }
     }
 
 
     if (params.run_pepnet) {
         mgf_files = Channel.fromPath(params.mgf_files)
-        (pepnet_result, serializer) = PEPNET(mgf_files, serializer.first())
+
+        if (params.serialize) {
+            (pepnet_result, serializer) = PEPNET(mgf_files, serializer.first())
+        }
+        else {
+            (pepnet_result, _) = PEPNET(mgf_files, serializer.first())
+        }
     }
 
 
     if (params.run_casanovo) {
         mgf_files = Channel.fromPath(params.mgf_files)
         config_casanovo = Channel.fromPath(params.config_casanovo)
-        (casanovo_result, _, serializer) = CASANOVO(mgf_files, config_casanovo.first(), serializer.first())
+
+        if (params.serialize) {
+            (casanovo_result, _, serializer) = CASANOVO(mgf_files, config_casanovo.first(), serializer.first())
+        }
+        else {
+            (casanovo_result, _, _) = CASANOVO(mgf_files, config_casanovo.first(), serializer.first())
+        }
     }
 
     
     if (params.run_instanovo) {
         mgf_files = Channel.fromPath(params.mgf_files)
         config_instanovo = Channel.fromPath(params.config_instanovo)
-        (instanovo_result, serializer) = INSTANOVO(mgf_files, config_instanovo.first(), serializer.first())
+
+        if (params.serialize) {
+            (instanovo_result, serializer) = INSTANOVO(mgf_files, config_instanovo.first(), serializer.first())
+        }
+        else{
+            (instanovo_result, _) = INSTANOVO(mgf_files, config_instanovo.first(), serializer.first())
+        }
     }
 
 }
