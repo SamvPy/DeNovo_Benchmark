@@ -3,3 +3,5 @@ source_code
 *.log
 **/__pycache__
 **/.nextflow
+**/build/**
+**/denovo_utils.egg-info/**
