@@ -1,10 +1,12 @@
 # Run script with NovoB environment
 
+from psm_utils import PSMList
 from pyteomics import mgf
 from glob import glob
 from tqdm import tqdm
 import argparse
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="mgf_file_parsing.log", level=logging.INFO)

@@ -1,11 +1,13 @@
-from enum import Enum
 import pandas as pd
-from pyteomics.mztab import MzTab
-from pyteomics import mgf
 import os
 import logging
+import argparse
+
+from pyteomics.mztab import MzTab
+from pyteomics import mgf
+from enum import Enum
 from tqdm import tqdm
-from psm_utils import PSM, PSMList
+from psm_utils import PSM, PSMList, Peptidoform
 
 
 logger = logging.getLogger(__name__)
@@ -15,54 +17,94 @@ tqdm.pandas()
 
 # Define parser functions
 MODIFICATION_MAPPING = {
-    "casanova": {
-        "+57.021": "[U:Carbamidomethyl]",
-        "+15.995": "[U:Oxidation]",
-        "+0.984": "[U:Deamidation]", # Check both D - N+0.984 and E - Q+0.984
-        "+42.011": "[U:Acetylation]-",
-        "+43.006": "[U:Carbamylation]-",
-        "-17.027": "[U:Ammonia-loss]-",
-        "+43.006-17.027": "[+25.980265]-" # [U:Carbamylation][U:Ammonia-loss]
+    "casanovo": {
+        "+57.021": "[UNIMOD:4]",
+        "+15.995": "[UNIMOD:35]",
+        "+0.984": "[UNIMOD:7]", # Check both D - N+0.984 and E - Q+0.984
+        "+43.006-17.027": "[+25.980265]-", # [UNIMOD:Carbamylation][UNIMOD:Ammonia-loss]
+        "+42.011": "[UNIMOD:1]-",
+        "+43.006": "[UNIMOD:5]-",
+        "-17.027": "[UNIMOD:385]-"
     },
     "instanovo": {
-        "C(+57.02)": "[U:Carbamidomethyl]",
-        "M(ox)": "M[U:Oxidation]",
-        "M(+15.99)": "M[U:Oxidation]",
-        "N(+.98)": "N[U:Deamidation]",
-        "Q(+.98)": "Q[U:Deamidation]"
+        "C(+57.02)": "[UNIMOD:4]",
+        "M(ox)": "M[UNIMOD:35]",
+        "M(+15.99)": "M[UNIMOD:35]",
+        "N(+.98)": "N[UNIMOD:7]",
+        "Q(+.98)": "Q[UNIMOD:7]"
     },
     "contranovo": {
-        "C[+57.021]": "C[U:Carbamidomethyl]",
-        "+42.011": "[U:Acetylation]-",  # Acetylation
-        "+43.006": "[U:Carbamylation]-",  # Carbamylation
-        "-17.027": "[U:Ammonia-loss]-",  # NH3 loss
+        "C+57.021": "C[UNIMOD:4]",
         "+43.006-17.027": "[+25.980265]-",
+        "-17.027+43.006": "[+25.980265]-",
+        "+42.011": "[UNIMOD:1]-",  # Acetylation
+        "+43.006": "[UNIMOD:5]-",  # 5
+        "-17.027": "[UNIMOD:385]-",  # NH3 loss
         # AA mods:
-        "M+15.995": "M[U:Oxidation]",  # Met Oxidation
-        "N+0.984": "N[U:Deamidation]", # Asn Deamidation
-        "Q+0.984": "Q[U:Deamidation]"  # Gln Deamidation
+        "M+15.995": "M[UNIMOD:35]",  # Met oxidation
+        "N+0.984": "N[UNIMOD:7]", # Asn deamidation
+        "Q+0.984": "Q[UNIMOD:7]"  # Gln deamidation
     },
     "pepnet": {
-        "Z": "M[U:Oxidation]",
-        "C": "C[U:Carbamidomethyl]"
+        "Z": "M[UNIMOD:35]",
+        "C": "C[UNIMOD:4]"
     },
     "novob": {
-        "C": "C[U:Carbamidomethyl]",
-        "m": "M[U:Oxidation]",
-        "n": "N[U:Deamidation]",
-        "q": "Q[U:Deamidation]",
-        "s": "S[U:Phosphorylation]", 
-        "t": "T[U:Phosphorylation]",
-        "y": "Y[U:Phosphorylation]"
+        "C": "C[UNIMOD:4]",
+        "m": "M[UNIMOD:35]",
+        "n": "N[UNIMOD:7]",
+        "q": "Q[UNIMOD:7]",
+        "s": "S[UNIMOD:21]", 
+        "t": "T[UNIMOD:21]",
+        "y": "Y[UNIMOD:21]"
     }
 }
 
+# Generate a comprehensive modification dictionary
+def generate_modification_labels(mapping: dict):
+    modification_dictionaries = list(mapping.values())
+    all_modification_labels = {}
 
-def parse_peptidoform(peptide, mapping):
+    for d in modification_dictionaries:
+        for k, v in d.items():
+            if k not in all_modification_labels:
+                all_modification_labels[k] = v
+
+    return all_modification_labels
+
+ALL_MODIFICATION_LABELS = generate_modification_labels(MODIFICATION_MAPPING)
+
+def generate_spectralis_mod_map() -> dict:
+    spectralis_modifications = [
+        "C[UNIMOD:4]", "M[UNIMOD:35]", 'Q[UNIMOD:7]', 'N[UNIMOD:7]'
+    ]
+
+    spectralis_mod_map = {
+        'Q[UNIMOD:7]': 'E',
+        'N[UNIMOD:7]': 'D'
+    }
+
+    for modification in ALL_MODIFICATION_LABELS.values():
+        if modification not in spectralis_modifications:
+            spectralis_mod_map[modification] = ""
+    return spectralis_mod_map
+
+MODIFICATION_MAPPING_TO_SPECTRALIS = generate_spectralis_mod_map()
+
+
+def parse_peptidoform(peptide: str, mapping: dict):
     peptide_parsed = peptide
     for k, v in mapping.items():
-        peptide_parsed = peptide_parsed.replace(k, v)
-    return peptide_parsed
+        if ("-" in v) and (not peptide_parsed.startswith(k)):
+            peptide_parsed = peptide_parsed.replace(k, v[:-1])
+        else:
+            peptide_parsed = peptide_parsed.replace(k, v)
+
+    try:
+        return Peptidoform(peptide_parsed)
+    except:
+        logging.info(f"Failed to parse: {peptide}")
+        return Peptidoform(proforma_sequence="")
 
 
 def casanovo_parser(result_path: str, mgf_path: str, mapping: dict):
@@ -70,6 +112,7 @@ def casanovo_parser(result_path: str, mgf_path: str, mapping: dict):
     # ASSUMPTION: 
     # The output of CasaNovo has the same length and order (in terms of spectra) as the mgf-file
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+    _ = mgf_file.pop("charge")
     result = pd.DataFrame(MzTab(result_path).spectrum_match_table).set_index("PSM_ID").reset_index().reset_index()
     run = os.path.basename(result_path)
 
@@ -86,15 +129,15 @@ def casanovo_parser(result_path: str, mgf_path: str, mapping: dict):
     assert length_result == length_join
 
     # Parse to psm utils type format
-    result["peptidoform"] = result.apply(
-        lambda x: str(x["sequence"]) + "/" + str(x["charge"]), axis=1
+    joined_file["peptidoform"] = joined_file.apply(
+        lambda x: str(x["sequence"]) + "/" + str(int(x["charge"])), axis=1
     )
-    result["precursor_mz"] = result["pepmass"].apply(
+    joined_file["precursor_mz"] = joined_file["pepmass"].apply(
         lambda x: x[0]
     )
 
     psmlist = PSMList(
-        result.progress_apply(
+        psm_list=joined_file.progress_apply(
             lambda x: PSM(
                 peptidoform=parse_peptidoform(x["peptidoform"], mapping),
                 spectrum_id=x["title"],
@@ -102,7 +145,7 @@ def casanovo_parser(result_path: str, mgf_path: str, mapping: dict):
                 score=x["search_engine_score[1]"],
                 precursor_mz=x["precursor_mz"],
                 retention_time=x["rtinseconds"],
-                source=x["search_engine"],
+                source=x["search_engine"][0] + x["search_engine"][1],
                 metadata={
                     "aa_scores": x["opt_ms_run[1]_aa_scores"],
                     "calc_mass_to_charge": x["calc_mass_to_charge"],
@@ -120,7 +163,7 @@ def instanovo_parser(result_path: str, mgf_path: str, mapping: dict):
     # ASSUMPTION: 
     # The output of Instanovo has the same length and order (in terms of spectra) as the mgf-file
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
-    result = pd.read_csv(result_path).reset_index()
+    result = pd.read_csv(result_path)
     run = os.path.basename(result_path)
 
     length_mgf = len(mgf_file)
@@ -135,15 +178,16 @@ def instanovo_parser(result_path: str, mgf_path: str, mapping: dict):
     assert length_mgf == length_join
     assert length_result == length_join
 
-    result["peptidoform"] = result.apply(
-        lambda x: str(x["preds"]) + "/" + str(int((x["charge"][0])))
+    joined_file["peptidoform"] = joined_file.apply(
+        lambda x: str(x["preds"]) + "/" + str(int((x["charge"][0]))), axis=1
     )
-    result["precursor_mz"] = result["pepmass"].apply(
+    joined_file["precursor_mz"] = joined_file["pepmass"].apply(
         lambda x: x[0]
     )
+    joined_file = joined_file.dropna()
 
     psmlist = PSMList(
-        result.progress_apply(
+        psm_list=joined_file.progress_apply(
             lambda x: PSM(
                 peptidoform=parse_peptidoform(x["peptidoform"], mapping),
                 spectrum_id=x["title"],
@@ -164,12 +208,13 @@ def instanovo_parser(result_path: str, mgf_path: str, mapping: dict):
 def contranovo_parser(result_path: str, mgf_path: str, mapping: dict):
 
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+    _ = mgf_file.pop("charge")
     result = pd.DataFrame(MzTab(result_path).spectrum_match_table).set_index("PSM_ID").reset_index().reset_index()
     run = os.path.basename(result_path)
 
     # Fuse the metadata of the spectra with result file
     joined_file = result.rename(
-        {
+        columns={
             "spectra_ref": "title"
         }
     ).merge(mgf_file, on="title")
@@ -180,15 +225,15 @@ def contranovo_parser(result_path: str, mgf_path: str, mapping: dict):
         logging.info(f"{result_path} for ContraNovo: dropped {len(mgf_file)-len(joined_file)} spectra.")
 
     # Parse to psm utils type format
-    result["peptidoform"] = result.apply(
-        lambda x: str(x["preds"]) + "/" + str(int((x["charge"][0])))
+    joined_file["peptidoform"] = joined_file.apply(
+        lambda x: str(x["sequence"]) + "/" + str(int((x["charge"]))), axis=1
     )
-    result["precursor_mz"] = result["pepmass"].apply(
+    joined_file["precursor_mz"] = joined_file["pepmass"].apply(
         lambda x: x[0]
     )
 
     psmlist = PSMList(
-        joined_file.progress_apply(
+        psm_list=joined_file.progress_apply(
             lambda x: PSM(
                 peptidoform=parse_peptidoform(x["peptidoform"], mapping),
                 spectrum_id=x["title"],
@@ -196,7 +241,7 @@ def contranovo_parser(result_path: str, mgf_path: str, mapping: dict):
                 score=x["search_engine_score[1]"],
                 precursor_mz=x["precursor_mz"],
                 retention_time=x["rtinseconds"],
-                source=x["search_engine"],
+                source="ContraNovo",
                 metadata={
                     "aa_scores": x["opt_ms_run[1]_aa_scores"],
                     "calc_mass_to_charge": x["calc_mass_to_charge"],
@@ -211,11 +256,12 @@ def contranovo_parser(result_path: str, mgf_path: str, mapping: dict):
 def novob_parser(result_path: str, mgf_path: str, mapping: dict):
 
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+    _ = mgf_file.pop("charge")
     result = pd.read_csv(result_path, sep="\t", header=None).rename(
         columns={
             0: "Mcount",
             1: "charge",
-            2: "pepmass",
+            2: "peptide_mass",
             3: "sequence_forward",
             4: "mass_forward",
             5: "probability_forward",
@@ -225,6 +271,7 @@ def novob_parser(result_path: str, mgf_path: str, mapping: dict):
             9: "scans"
         }
     )
+    result["scans"] = result.apply(lambda x: x["scans"][2:-1], axis=1) # Remove b' ... '
     run = os.path.basename(result_path)
 
     # Fuse the metadata of the spectra with result file
@@ -236,17 +283,17 @@ def novob_parser(result_path: str, mgf_path: str, mapping: dict):
         logging.info(f"{result_path} for ContraNovo: dropped {len(mgf_file)-len(joined_file)} spectra.")
 
     # Parse to psm utils type format
-    result["precursor_mz"] = result["pepmass"].apply(
+    joined_file["precursor_mz"] = joined_file["pepmass"].apply(
         lambda x: x[0]
     )
 
     def select_top_PSM(x):
         if x["probability_forward"] > x["probability_reverse"]:
-            peptidoform = eval(x["sequence_forward"])[0] + "/" + str(x["charge"])
+            peptidoform = eval(x["sequence_forward"])[0] + "/" + str(int(x["charge"]))
             mass_error = x["mass_forward"]
             proba = x["probability_forward"]
         else:
-            peptidoform = eval(x["sequence_reverse"])[0] + "/" + str(x["charge"])
+            peptidoform = eval(x["sequence_reverse"])[0] + "/" + str(int(x["charge"]))
             mass_error = x["mass_reverse"]
             proba = x["probability_reverse"]
         
@@ -260,13 +307,12 @@ def novob_parser(result_path: str, mgf_path: str, mapping: dict):
             source="NovoB",
             metadata={
                 "ppm_error": mass_error,
-                "calc_mass_to_charge": x["calc_mass_to_charge"],
                 "scans": x["scans"]
             }
         )
 
     psmlist = PSMList(
-        joined_file.progress_apply(
+        psm_list=joined_file.progress_apply(
             lambda x: select_top_PSM(x),
             axis=1
         ).tolist()
@@ -277,7 +323,7 @@ def pepnet_parser(result_path: str, mgf_path: str, mapping: dict):
     
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
     result = pd.read_csv(result_path, sep="\t").rename(
-        columns={"TITLE", "title"}
+        columns={"TITLE": "title"}
     )
     run = os.path.basename(result_path)
 
@@ -287,15 +333,15 @@ def pepnet_parser(result_path: str, mgf_path: str, mapping: dict):
     # Sanity checks
     assert len(result) == len(joined_file)
 
-    result["peptidoform"] = result.apply(
-        lambda x: x["DENOVO"] + "/" + str(int((x["charge"][0])))
+    joined_file["peptidoform"] = joined_file.apply(
+        lambda x: x["DENOVO"] + "/" + str(int((x["charge"][0]))), axis=1
     )
-    result["precursor_mz"] = result["pepmass"].apply(
+    joined_file["precursor_mz"] = joined_file["pepmass"].apply(
         lambda x: x[0]
     )
 
     psmlist = PSMList(
-        result.progress_apply(
+        psm_list=joined_file.progress_apply(
             lambda x: PSM(
                 peptidoform=parse_peptidoform(x["peptidoform"], mapping),
                 spectrum_id=x["title"],
@@ -335,7 +381,7 @@ class DenovoEngine(Enum):
         self.parser_func = parser_func
 
     def parse(self, result_path: str, mgf_path: str):
-        self.parser_func(result_path, mgf_path, MODIFICATION_MAPPING[self.label])
+        return self.parser_func(result_path, mgf_path, MODIFICATION_MAPPING[self.label])
 
     @classmethod
     def from_string(cls, label: str):
@@ -346,7 +392,7 @@ class DenovoEngine(Enum):
 
 
 
-def denovo_to_psmlist(result_path: str, mgf_path: str, denovo: DenovoEngine):
+def denovo_to_psmlist(result_path: str, mgf_path: str, denovo: DenovoEngine) -> PSMList:
     """
     Parse results to PSM utils using the specified de novo engine.
 
@@ -359,4 +405,67 @@ def denovo_to_psmlist(result_path: str, mgf_path: str, denovo: DenovoEngine):
     """
 
     denovo_engine = DenovoEngine.from_string(denovo)
-    denovo_engine.parse(result_path, mgf_path)
+    psmlist = denovo_engine.parse(result_path, mgf_path)
+    return psmlist
+
+
+def annotate_psms_to_mgf(psmlist: PSMList, mgf_path: str, output_folder: str, modification_mapping: dict, exclusion_list = []):
+    filename = os.path.basename(mgf_path).split(".")[0]
+    mgf_file = mgf.read(mgf_path)
+    annotation_dict = psmlist.to_dataframe().loc[
+        :, ["peptidoform", "spectrum_id"]
+        ].set_index("spectrum_id").to_dict("index")
+    
+    mgf_annotated = []
+
+    for spectrum in mgf_file:
+        
+        annotated_peptide = annotation_dict[
+            spectrum["params"]["title"]
+        ]["peptidoform"].proforma
+
+        for k, v in modification_mapping.items():
+            annotated_peptide = annotated_peptide.replace(k, v)
+        
+        for exclude in exclusion_list:
+            if exclude in annotated_peptide:
+                continue
+        
+        spectrum["params"]["seq"] = annotated_peptide.split("/")[0]
+        mgf_annotated.append(spectrum)
+
+    mgf.write(
+        mgf_annotated,
+        output= os.path.join(output_folder, filename) + "_annotated.mgf",
+        header=mgf_file.header
+    )
+
+
+def main(args):
+    
+    psmlist = denovo_to_psmlist(
+        result_path=args.search_result,
+        mgf_path=args.mgf_file,
+        denovo=args.denovo_engine
+    )   
+    annotate_psms_to_mgf(
+        psmlist=psmlist,
+        mgf_path=args.mgf_file,
+        output_folder=args.output_folder,
+        modification_mapping=MODIFICATION_MAPPING_TO_SPECTRALIS,
+        exclusion_list=args.exclusion_list
+    )
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Write mgf files, annotated by a given de novo search")
+    parser.add_argument('-r', '--search_result', required=True, help="Path to result file generated by a de novo search engine.")
+    parser.add_argument('-m', '--mgf_file', required=True, help="Path to unannotated mgf-file")
+    parser.add_argument('-d', '--denovo_engine', required=True, help="The denovo engine used to generate the files search result file.")
+    parser.add_argument('-o', '--output_folder', default="", help="Output folder to store annotated mgf-file")
+    parser.add_argument('-x', '--exclusion_list', default=[], help="List containing tags in peptides that should be dropped (e. g. modification tags...)")
+
+    args = parser.parse_args()
+
+    main(args)
