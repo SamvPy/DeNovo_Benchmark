@@ -92,7 +92,7 @@ def generate_spectralis_mod_map() -> dict:
 MODIFICATION_MAPPING_TO_SPECTRALIS = generate_spectralis_mod_map()
 
 
-def parse_peptidoform(peptide: str, mapping: dict):
+def parse_peptidoform(peptide: str, mapping: dict, max_length=30):
     peptide_parsed = peptide
     for k, v in mapping.items():
         if ("-" in v) and (not peptide_parsed.startswith(k)):
@@ -101,13 +101,16 @@ def parse_peptidoform(peptide: str, mapping: dict):
             peptide_parsed = peptide_parsed.replace(k, v)
 
     try:
-        return Peptidoform(peptide_parsed)
+        peptidoform = Peptidoform(peptide_parsed)
+        if (len(peptidoform) > max_length) or (peptidoform.precursor_charge > 6):
+            return None
+        return peptidoform
     except:
         logging.info(f"Failed to parse: {peptide}")
-        return Peptidoform(proforma_sequence="")
+        return None
 
 
-def casanovo_parser(result_path: str, mgf_path: str, mapping: dict):
+def casanovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
 
     # ASSUMPTION: 
     # The output of CasaNovo has the same length and order (in terms of spectra) as the mgf-file
@@ -136,10 +139,15 @@ def casanovo_parser(result_path: str, mgf_path: str, mapping: dict):
         lambda x: x[0]
     )
 
-    psmlist = PSMList(
-        psm_list=joined_file.progress_apply(
+    # Parse peptidoforms with max_length == 30
+    joined_file["peptidoform"] = joined_file["peptidoform"].apply(
+        lambda x: parse_peptidoform(x, mapping, max_length)
+    )
+    joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
+    
+    psm_list = joined_file.progress_apply(
             lambda x: PSM(
-                peptidoform=parse_peptidoform(x["peptidoform"], mapping),
+                peptidoform=x["peptidoform"],
                 spectrum_id=x["title"],
                 run=run,
                 score=x["search_engine_score[1]"],
@@ -155,10 +163,12 @@ def casanovo_parser(result_path: str, mgf_path: str, mapping: dict):
             ),
             axis=1
         ).tolist()
-    )
+    
+
+    psmlist = PSMList(psm_list=psm_list)
     return psmlist
 
-def instanovo_parser(result_path: str, mgf_path: str, mapping: dict):
+def instanovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
 
     # ASSUMPTION: 
     # The output of Instanovo has the same length and order (in terms of spectra) as the mgf-file
@@ -184,12 +194,15 @@ def instanovo_parser(result_path: str, mgf_path: str, mapping: dict):
     joined_file["precursor_mz"] = joined_file["pepmass"].apply(
         lambda x: x[0]
     )
-    joined_file = joined_file.dropna()
+    joined_file["peptidoform"] = joined_file["peptidoform"].apply(
+        lambda x: parse_peptidoform(x, mapping, max_length)
+    )
+    joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
 
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(
-                peptidoform=parse_peptidoform(x["peptidoform"], mapping),
+                peptidoform=x["peptidoform"],
                 spectrum_id=x["title"],
                 run=run,
                 score=x["log_probs"],
@@ -205,7 +218,7 @@ def instanovo_parser(result_path: str, mgf_path: str, mapping: dict):
     )
     return psmlist
 
-def contranovo_parser(result_path: str, mgf_path: str, mapping: dict):
+def contranovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
 
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
     _ = mgf_file.pop("charge")
@@ -231,11 +244,15 @@ def contranovo_parser(result_path: str, mgf_path: str, mapping: dict):
     joined_file["precursor_mz"] = joined_file["pepmass"].apply(
         lambda x: x[0]
     )
+    joined_file["peptidoform"] = joined_file["peptidoform"].apply(
+        lambda x: parse_peptidoform(x, mapping, max_length)
+    )
+    joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
 
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(
-                peptidoform=parse_peptidoform(x["peptidoform"], mapping),
+                peptidoform=x["peptidoform"],
                 spectrum_id=x["title"],
                 run=run,
                 score=x["search_engine_score[1]"],
@@ -253,7 +270,7 @@ def contranovo_parser(result_path: str, mgf_path: str, mapping: dict):
     )
     return psmlist
 
-def novob_parser(result_path: str, mgf_path: str, mapping: dict):
+def novob_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
 
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
     _ = mgf_file.pop("charge")
@@ -287,7 +304,7 @@ def novob_parser(result_path: str, mgf_path: str, mapping: dict):
         lambda x: x[0]
     )
 
-    def select_top_PSM(x):
+    def select_top_PSM(x, max_length):
         if x["probability_forward"] > x["probability_reverse"]:
             peptidoform = eval(x["sequence_forward"])[0] + "/" + str(int(x["charge"]))
             mass_error = x["mass_forward"]
@@ -296,30 +313,37 @@ def novob_parser(result_path: str, mgf_path: str, mapping: dict):
             peptidoform = eval(x["sequence_reverse"])[0] + "/" + str(int(x["charge"]))
             mass_error = x["mass_reverse"]
             proba = x["probability_reverse"]
-        
-        return PSM(
-            peptidoform=parse_peptidoform(peptidoform, mapping),
-            spectrum_id=x["title"],
-            run=run,
-            score=proba,
-            precursor_mz=x["precursor_mz"],
-            retention_time=x["rtinseconds"],
-            source="NovoB",
-            metadata={
-                "ppm_error": mass_error,
-                "scans": x["scans"]
-            }
-        )
+
+        peptide = parse_peptidoform(peptidoform, mapping, max_length)
+        if peptide:
+            return None
+        else:
+            return PSM(
+                peptidoform=parse_peptidoform(peptidoform, mapping),
+                spectrum_id=x["title"],
+                run=run,
+                score=proba,
+                precursor_mz=x["precursor_mz"],
+                retention_time=x["rtinseconds"],
+                source="NovoB",
+                metadata={
+                    "ppm_error": mass_error,
+                    "scans": x["scans"]
+                }
+            )
+
+    joined_file = joined_file.progress_apply(
+        lambda x: select_top_PSM(x, max_length),
+        axis=1
+    )
+    joined_file = joined_file.dropna()
 
     psmlist = PSMList(
-        psm_list=joined_file.progress_apply(
-            lambda x: select_top_PSM(x),
-            axis=1
-        ).tolist()
+        psm_list=joined_file.tolist()
     )
     return psmlist
 
-def pepnet_parser(result_path: str, mgf_path: str, mapping: dict):
+def pepnet_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
     
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
     result = pd.read_csv(result_path, sep="\t").rename(
@@ -334,16 +358,21 @@ def pepnet_parser(result_path: str, mgf_path: str, mapping: dict):
     assert len(result) == len(joined_file)
 
     joined_file["peptidoform"] = joined_file.apply(
-        lambda x: x["DENOVO"] + "/" + str(int((x["charge"][0]))), axis=1
+        lambda x: str(x["DENOVO"]) + "/" + str(int((x["charge"][0]))), axis=1
     )
     joined_file["precursor_mz"] = joined_file["pepmass"].apply(
         lambda x: x[0]
     )
 
+    joined_file["peptidoform"] = joined_file["peptidoform"].apply(
+        lambda x: parse_peptidoform(x, mapping, max_length)
+    )
+    joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
+
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(
-                peptidoform=parse_peptidoform(x["peptidoform"], mapping),
+                peptidoform=x["peptidoform"],
                 spectrum_id=x["title"],
                 run=run,
                 score=x["Score"],
@@ -420,9 +449,13 @@ def annotate_psms_to_mgf(psmlist: PSMList, mgf_path: str, output_folder: str, mo
 
     for spectrum in mgf_file:
         
-        annotated_peptide = annotation_dict[
-            spectrum["params"]["title"]
-        ]["peptidoform"].proforma
+        # When the peptide prediction didnt fit the requirements, skip the spectrum.
+        try:
+            annotated_peptide = annotation_dict[
+                spectrum["params"]["title"]
+            ]["peptidoform"].proforma
+        except:
+            continue
 
         for k, v in modification_mapping.items():
             annotated_peptide = annotated_peptide.replace(k, v)

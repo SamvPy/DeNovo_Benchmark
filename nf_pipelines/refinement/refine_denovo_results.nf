@@ -27,9 +27,6 @@ process INSTANOVO_PLUS {
     maxForks 1
     tag "Refining sequence predictions with InstaNovo+ for ${result_file.baseName}..."
 
-    publishDir "${params.denovo_results_dir}/instanovoplus", mode: "copy", saveAs: { filename ->
-        "${mgf_file.baseName}_refinement.csv"}, pattern: "${result_file.baseName}.csv"
-
     input:
         path result_file
         path mapping_file
@@ -42,8 +39,8 @@ process INSTANOVO_PLUS {
         python ${params.instanovo_plus_run_script} \\
             -i $result_file \\
             -m ${params.model_path_instanovo_diffusion} \\
-            -c $mapping_file
-        echo "Ran instanovo_plus, now hang..."
+            -c $mapping_file \\
+            -o ${params.denovo_results_dir}/instanovoplus
         """
 }
 
@@ -112,5 +109,4 @@ workflow {
         mgf_annotated = SPECTRALIS_PARSER(mgf_result_map)
         _ = SPECTRALIS(mgf_annotated)
     }
-
 }
