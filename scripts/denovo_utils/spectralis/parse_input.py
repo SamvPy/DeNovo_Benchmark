@@ -57,6 +57,9 @@ MODIFICATION_MAPPING = {
         "s": "S[UNIMOD:21]", 
         "t": "T[UNIMOD:21]",
         "y": "Y[UNIMOD:21]"
+    },
+    "general": {
+        "acetylation": "[UNIMOD:1]"
     }
 }
 
@@ -102,7 +105,7 @@ def parse_peptidoform(peptide: str, mapping: dict, max_length=30):
 
     try:
         peptidoform = Peptidoform(peptide_parsed)
-        if (len(peptidoform) > max_length) or (peptidoform.precursor_charge > 6):
+        if (len(peptidoform) > max_length) or (peptidoform.precursor_charge > 6) or (len(peptidoform) < 2):
             return None
         return peptidoform
     except:
@@ -113,7 +116,8 @@ def parse_peptidoform(peptide: str, mapping: dict, max_length=30):
 def casanovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
 
     # ASSUMPTION: 
-    # The output of CasaNovo has the same length and order (in terms of spectra) as the mgf-file
+    # The CasaNovo spectra_ref columns has prefix ms_run[1]:index= and the number is a count
+    # of spectra, starting from 0 and going to n for a file with n spectra
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
     _ = mgf_file.pop("charge")
     result = pd.DataFrame(MzTab(result_path).spectrum_match_table).set_index("PSM_ID").reset_index().reset_index()

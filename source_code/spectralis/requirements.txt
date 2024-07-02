@@ -1,0 +1,16 @@
+click
+editdistance==0.5.3
+h5py
+fastparquet
+grpcio
+networkx
+numpy 
+pandas==1.3.5
+pyaml
+pyteomics==4.6
+scikit-learn
+scipy==1.6.1
+torch
+tqdm
+tritonclient[all]
+xgboost==1.6.2

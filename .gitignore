@@ -1,4 +1,3 @@
-source_code
 *.log.*
 *.log
 **/__pycache__

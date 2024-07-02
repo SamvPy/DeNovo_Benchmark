@@ -1,0 +1,11 @@
+- mode=inference
+- serialized_model_path=/public/compomics3/Sam/denovo_checkpoints/GraphNovo/ckpt
+- dist=false
+- infer=optimal_path_inference
+- task=optimal_path
+- wandb.project=GraphNovo
+- wandb.name=PathSearcher
+- infer.beam_size=20
+- infer.testset=bacillus.10k
+- infer.output_file=/public/compomics3/Sam/test_data/testing_graphnovo/prediction/optimal_path/bacillus_beam20.csv
+- infer.data_dir=/public/compomics3/Sam/test_data/testing_graphnovo/graphnovo_data/overall

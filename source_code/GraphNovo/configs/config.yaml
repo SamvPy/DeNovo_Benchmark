@@ -1,0 +1,22 @@
+defaults:
+  - preprocessing: all_graph
+  - encoder: light
+  - decoder: light
+  - train: train
+  - infer: optimal_path_inference
+  - _self_
+
+mode: train
+dist: false
+task: optimal_path
+train_spec_header_path: None
+eval_spec_header_path: None
+train_dataset_dir: None
+eval_dataset_dir: None
+serialized_model_path: None
+
+wandb:
+  entity: graphnovo
+  project: Graphnovo
+  name: pathsearcer
+
