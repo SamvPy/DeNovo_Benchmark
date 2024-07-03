@@ -25,10 +25,29 @@ rm -rf ~/miniconda3/miniconda.sh
 
 ## Create the environments by running the bash script 'create_envs.sh'
 
-Go to the source_code directory and run the bash script
+1. Go to the source_code directory 
 
 ```bash
 cd source_code
+```
+
+2. Download some required tools that would otherwise cause issues with environment installations:
+
+```bash
+sudo apt-get install gcc
+```
+
+3. Restart your shell and run the following
+
+```bash
+sudo apt-get update
+sudo apt-get install build-essential
+sudo apt-get install python3-dev
+```
+
+4. Create the de novo tool conda environments using the bash script
+
+```bash
 chmod +x create_envs.sh
 ./create_envs.sh
 ```

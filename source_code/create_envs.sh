@@ -5,27 +5,39 @@ for env_dir in ./*; do
   if [ -d "$env_dir" ]; then
     env_name=$(basename "$env_dir")
 
-    # Skip the casanovo directory
-    if [ "$env_name" == "casanovo" ]; then
-      echo "Skipping $env_dir..."
-      continue
-    fi
-
     echo "Processing $env_dir..."
 
     # Navigate to the environment directory
     cd "$env_dir" || exit
+
+    # Convert the directory name to lowercase to construct the environment file name
+    env_file="${env_name,,}_env.yaml"
+
+    # Check if the environment file exists
+    if [ ! -f "$env_file" ]; then
+      echo "Environment file $env_file does not exist. Skipping $env_dir..."
+      cd - || exit
+      continue
+    fi
 
     # Extract the environment name from the directory name
     env_name=$(basename "$env_dir")
 
     # Create the conda environment
     echo "Creating conda environment $env_name..."
-    conda env create -f environment.yml
+    conda env create -f "$env_file"
+
+    # Skip the casanovo and spectralis directory
+    # They do not require a local install
+    if [[ "$env_name" == "casanovo" || "$env_name" == "spectralis" ]]; then
+      echo "Skipping $env_dir..."
+      cd - || exit
+      continue
+    fi
 
     # Activate the environment
     echo "Activating environment $env_name..."
-    source activate "$env_name"
+    source activate "${env_name,,}_env"
 
     # Install the local package using pip
     echo "Installing local package for $env_name..."
