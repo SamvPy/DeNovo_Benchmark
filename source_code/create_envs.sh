@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Loop through each environment directory
-for env_dir in source_code/*; do
+for env_dir in ./*; do
   if [ -d "$env_dir" ]; then
     env_name=$(basename "$env_dir")
 
