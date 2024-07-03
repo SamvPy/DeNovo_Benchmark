@@ -1,5 +1,5 @@
 process CASANOVO {
-    conda '/home/sam/miniconda3/envs/casanovo_env'
+    conda "${params.conda_env_dir}/casanovo_env"
     maxForks 1
     tag "Running CasaNovo search on ${mgf_file.baseName}..."
 
@@ -31,7 +31,7 @@ process CASANOVO {
 
 // Implement an error handling step (default GPU, retry on CPU) but implement in the script part (either in python or groovy)
 process INSTANOVO {
-    conda '/home/sam/miniconda3/envs/instanovo'
+    conda "${params.conda_env_dir}/instanovo_env"
     maxForks 1
     tag "Running InstaNovo search on ${mgf_file.baseName}..."
 
@@ -62,7 +62,7 @@ process INSTANOVO {
 
 
 process CONTRANOVO {
-    conda '/home/sam/miniconda3/envs/ContraNovo'
+    conda "${params.conda_env_dir}/contranovo_env"
     maxForks 7
     tag "Running ContraNovo search on ${mgf_file.baseName}..."
 
@@ -91,7 +91,7 @@ process CONTRANOVO {
 
 
 process NOVOB {
-    conda '/home/sam/miniconda3/envs/NovoB'
+    conda "${params.conda_env_dir}/novob_env"
     maxForks 1
     tag "Running NovoB search on ${mgf_file.baseName}..."
 
@@ -115,7 +115,7 @@ process NOVOB {
 
 
 process PEPNET {
-    conda '/home/sam/miniconda3/envs/PepNet_env'
+    conda "${params.conda_env_dir}/pepnet_env"
     maxForks 1
     tag "Running PepNet search on ${mgf_file.baseName}..."
 
