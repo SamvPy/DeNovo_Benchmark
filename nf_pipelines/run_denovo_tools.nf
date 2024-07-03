@@ -63,7 +63,7 @@ process INSTANOVO {
 
 process CONTRANOVO {
     conda '/home/sam/miniconda3/envs/ContraNovo'
-    maxForks 1
+    maxForks 7
     tag "Running ContraNovo search on ${mgf_file.baseName}..."
 
     // Store the ContraNovo results

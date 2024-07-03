@@ -123,6 +123,9 @@ def casanovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=3
     result = pd.DataFrame(MzTab(result_path).spectrum_match_table).set_index("PSM_ID").reset_index().reset_index()
     run = os.path.basename(result_path)
 
+    mgf_file = mgf_file.reset_index()
+    result["index"] = result.spectra_ref.apply(lambda x: x.split("=")[-1])
+
     length_mgf = len(mgf_file)
     length_result = len(result)
     assert length_mgf == length_result
