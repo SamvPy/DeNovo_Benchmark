@@ -14,7 +14,7 @@ process INSTANOVO_PLUS_PARSER {
 
     script:
         """
-        python -m denovo_utils.instanovo.parse_to_instanovoplus \\
+        python -m denovo_utils.parsers.scripts.instanovoplus_input \\
             -r $result_file \\
             -m $mgf_file \\
             -d ${params.denovo_engine}
@@ -57,7 +57,7 @@ process SPECTRALIS_PARSER {
 
     script:
         """
-        python -m denovo_utils.spectralis.parse_input \\
+        python -m denovo_utils.parsers.scripts.spectralis_input \\
             -r $result_file \\
             -m $mgf_file \\
             -d ${params.denovo_engine}

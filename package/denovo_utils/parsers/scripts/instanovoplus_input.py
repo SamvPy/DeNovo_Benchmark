@@ -1,4 +1,5 @@
-from ..spectralis.parse_input import denovo_to_psmlist, ALL_MODIFICATION_LABELS
+from ..converters import DenovoEngineConverter
+from ..constants import ALL_MODIFICATION_LABELS
 from pyteomics import mgf
 
 import os
@@ -33,10 +34,11 @@ def store_dictionary_to_json(dictionary: dict, filename: str):
 
 
 def main(args):
-    psmlist = denovo_to_psmlist(
-        result_path=args.search_result,
-        mgf_path=args.mgf_file,
-        denovo=args.denovo_engine
+
+    denovo_engine = DenovoEngineConverter.select(label=args.denovo_engine)
+    psmlist = denovo_engine.parse(
+        result_path=args.result_path,
+        mgf_path=args.mgf_path
     )
 
     filename = os.path.basename(args.search_result).split(".")[0]

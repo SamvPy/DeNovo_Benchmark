@@ -14,9 +14,9 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 MEMORY_LIMIT = 8000 # MiB
 gpus = tf.config.list_physical_devices('GPU')
-tf.config.set_visible_devices(gpus[1], 'GPU')
+tf.config.set_visible_devices(gpus[0], 'GPU')
 tf.config.set_logical_device_configuration(
-    gpus[1], 
+    gpus[0], 
     [tf.config.LogicalDeviceConfiguration(memory_limit=MEMORY_LIMIT)])
 
 Proton = 1.007276035

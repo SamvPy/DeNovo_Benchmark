@@ -1,0 +1,1 @@
+In contrast to the other folders within the package folder, this folder requires the instanovo_env environment to run succesfully.
