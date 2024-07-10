@@ -1,4 +1,3 @@
-from .mgf_filter import filter_on_charge
-from .writers import psmlist_to_mgf
+from .writers import psmlist_to_mgf, filter_on_charge, MGFWriter
 
-__all__ = ["filter_on_charge", "psmlist_to_mgf"]
+__all__ = ["filter_on_charge", "psmlist_to_mgf", "MGFWriter"]

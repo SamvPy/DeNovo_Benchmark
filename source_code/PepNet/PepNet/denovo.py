@@ -31,12 +31,13 @@ def read_mgf(data, count=-1, default_charge=-1):
         else:
             c = int(str(param['charge'][0])[0])
 
-        if 'seq' in param:
-            pep = param['seq'].strip()
-        elif 'title' in param:
+        # This is the evil code!!!
+        if 'title' in param:
             pep = param['title'].strip()
+        elif 'scans' in param:
+            pep = param['scans'].strip()
         else:
-            pep = ''
+            raise ReferenceError("No title or scans field in the MGF. This is required to traceback output to raw data!")
 
         if 'pepmass' in param:
             mass = param['pepmass'][0]

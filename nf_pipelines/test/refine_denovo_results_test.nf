@@ -50,19 +50,17 @@ process SPECTRALIS_PARSER {
     tag "Creating annotated mgf-file for Spectralis for ${mgf_file.baseName}"
 
     input:
-        path mgf_file
-        // tuple path(mgf_file), path(result_file)
+        tuple path(mgf_file), path(result_file)
 
     output:
         path "${mgf_file.baseName}_annotated.mgf"
 
     script:
-        denovo_engines = params.denovo_engines.join(' ')
         """
         python -m denovo_utils.parsers.scripts.spectralis_input \\
-            -r ${params.result_root_dir} \\
+            -r $result_file \\
             -m $mgf_file \\
-            -d ${denovo_engines}
+            -d ${params.denovo_engine}
         """
 }
 
@@ -104,13 +102,11 @@ workflow {
 
     if (params.run_spectralis) {
 
-        // result_files = Channel.fromPath(params.result_files)
+        result_files = Channel.fromPath(params.result_files)
         mgf_files = Channel.fromPath(params.mgf_files)
-        // mgf_result_map = matchFiles(mgf_files, result_files)
+        mgf_result_map = matchFiles(mgf_files, result_files)
 
-        // mgf_annotated = SPECTRALIS_PARSER(mgf_result_map)
-
-        mgf_annotated = SPECTRALIS_PARSER(mgf_files)
+        mgf_annotated = SPECTRALIS_PARSER(mgf_result_map)
         _ = SPECTRALIS(mgf_annotated)
     }
 }

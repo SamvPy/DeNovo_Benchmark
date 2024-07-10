@@ -5,6 +5,7 @@ from .novob import novob_parser
 from .pepnet import pepnet_parser
 
 from enum import Enum
+from psm_utils import PSMList
 
 from ..constants import MODIFICATION_MAPPING
 from ..exceptions import DenovoEngineNotSupported
@@ -21,7 +22,7 @@ class DenovoEngineConverter(Enum):
         self.label = label
         self.parser_func = parser_func
 
-    def parse(self, result_path: str, mgf_path: str):
+    def parse(self, result_path: str, mgf_path: str) -> PSMList:
         """
         Parse the results from a specified de novo search engine.
 

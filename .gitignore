@@ -4,3 +4,8 @@
 **/.nextflow
 **/build/**
 **/denovo_utils.egg-info/**
+**/ContraNovo.egg-info/**
+**/instanovo.egg-info/**
+**/NovoB.egg-info/**
+**/PepNet.egg-info/**
+**/spectralis.egg-info/**

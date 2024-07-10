@@ -73,32 +73,60 @@ def generate_all_modification_labels(mapping: dict) -> dict:
 
 ALL_MODIFICATION_LABELS = generate_all_modification_labels(MODIFICATION_MAPPING)
 
-def generate_spectralis_mod_map(all_labels: dict) -> dict:
-    """
-    Generate a mapping of modifications to Spectralis format.
+# def generate_spectralis_mod_map(all_labels: dict) -> dict:
+#     """
+#     Generate a mapping of modifications to Spectralis format.
 
-    Parameters
-    ----------
-    all_labels : dict
-        A dictionary of all unique modification labels.
+#     Parameters
+#     ----------
+#     all_labels : dict
+#         A dictionary of all unique modification labels.
 
-    Returns
-    -------
-    dict
-        A dictionary mapping modifications to Spectralis format.
-    """
-    spectralis_modifications = [
-        "C[UNIMOD:4]", "M[UNIMOD:35]", 'Q[UNIMOD:7]', 'N[UNIMOD:7]'
-    ]
+#     Returns
+#     -------
+#     dict
+#         A dictionary mapping modifications to Spectralis format.
+#     """
+#     spectralis_modifications = [
+#         "C[UNIMOD:4]", "M[UNIMOD:35]", 'Q[UNIMOD:7]', 'N[UNIMOD:7]'
+#     ]
 
-    spectralis_mod_map = {
-        'Q[UNIMOD:7]': 'E',
-        'N[UNIMOD:7]': 'D'
-    }
+#     spectralis_mod_map = {
+#         'Q[UNIMOD:7]': 'E',
+#         'N[UNIMOD:7]': 'D'
+#     }
 
-    for modification in all_labels.values():
-        if modification not in spectralis_modifications:
-            spectralis_mod_map[modification] = ""
-    return spectralis_mod_map
+#     for modification in all_labels.values():
+#         if modification not in spectralis_modifications:
+#             spectralis_mod_map[modification] = ""
+#     return spectralis_mod_map
 
-MODIFICATION_MAPPING_TO_SPECTRALIS = generate_spectralis_mod_map(ALL_MODIFICATION_LABELS)
+# MODIFICATION_MAPPING_TO_SPECTRALIS = generate_spectralis_mod_map(ALL_MODIFICATION_LABELS)
+
+MODIFICATION_MAPPING_TO_SPECTRALIS = {
+    'Q[UNIMOD:7]': 'E',
+    'N[UNIMOD:7]': 'D',
+    'C[UNIMOD:4]': 'C', # L257 in spectralis_master of spectralis codebase
+    '[+25.980265]-': '',
+    '[UNIMOD:1]-': '',
+    '[UNIMOD:5]-': '',
+    '[UNIMOD:385]-': '',
+    '[UNIMOD:35]': '',
+    'S[UNIMOD:21]': 'S',
+    'T[UNIMOD:21]': 'T',
+    'Y[UNIMOD:21]': 'Y',
+    '[UNIMOD:1]': '',
+    '[UNIMOD:5]': '',
+    '-': ''
+}
+
+EXTENSIONS = {
+    "casanovo": ".mztab",
+    "contranovo": ".mztab",
+    "instanovo": ".csv",
+    "novob": ".tsv",
+    "pepnet": ".tsv",
+    "novor": ".csv",
+    "pepnovo": ".mgf.out",
+    "directag": ".tags"
+}

@@ -105,6 +105,9 @@ def main(args):
         lambda x: mapping_file[str(x)]["title"]
     )
 
+    if not os.path.exists(args.output_folder):
+        os.mkdir(args.output_folder)
+
     diffusion_predictions.to_csv(
         os.path.join(args.output_folder, os.path.basename(args.input_file).split(".")[0]) + ".csv",
         index=False)

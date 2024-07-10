@@ -8,8 +8,8 @@ process CASANOVO {
         "${mgf_file.baseName}.mztab"}, pattern: "*.mztab"
     
     // Store the created log file
-    publishDir "${params.denovo_results_dir}/casanovo", mode: "copy", saveAs: { filename ->
-        "${mgf_file.baseName}.log"}, pattern: "*.log"
+    // publishDir "${params.denovo_results_dir}/casanovo", mode: "copy", saveAs: { filename ->
+    //     "${mgf_file.baseName}.log"}, pattern: "*.log"
     
 
     input:
@@ -69,8 +69,8 @@ process CONTRANOVO {
     // Store the ContraNovo results
     publishDir "${params.denovo_results_dir}/contranovo", mode: "copy", saveAs: { filename ->
         "${mgf_file.baseName}.mztab"}, pattern: "*.mztab"
-    publishDir "${params.denovo_results_dir}/contranovo", mode: "copy", saveAs: { filename ->
-        "${mgf_file.baseName}.log"}, pattern: "*.log"
+    // publishDir "${params.denovo_results_dir}/contranovo", mode: "copy", saveAs: { filename ->
+    //     "${mgf_file.baseName}.log"}, pattern: "*.log"
 
     input:
         path mgf_file

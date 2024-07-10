@@ -16,21 +16,29 @@ def novob_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
 
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
     _ = mgf_file.pop("charge")
-    result = pd.read_csv(result_path, sep="\t", header=None).rename(
-        columns={
-            0: "Mcount",
-            1: "charge",
-            2: "peptide_mass",
-            3: "sequence_forward",
-            4: "mass_forward",
-            5: "probability_forward",
-            6: "sequence_reverse",
-            7: "mass_reverse",
-            8: "probability_reverse",
-            9: "scans"
-        }
-    )
-    result["scans"] = result.apply(lambda x: x["scans"][2:-1], axis=1) # Remove b' ... '
+
+    try:
+        result = pd.read_csv(result_path, sep="\t", header=None).rename(
+            columns={
+                0: "Mcount",
+                1: "charge",
+                2: "peptide_mass",
+                3: "sequence_forward",
+                4: "mass_forward",
+                5: "probability_forward",
+                6: "sequence_reverse",
+                7: "mass_reverse",
+                8: "probability_reverse",
+                9: "scans"
+            }
+        )
+    except:
+        return PSMList(psm_list=[])
+    
+    try:
+        result["scans"] = result.apply(lambda x: eval(x["scans"]).decode('utf-8'), axis=1) # Remove b' ... '
+    except:
+        pass
     run = os.path.basename(result_path)
 
     # Fuse the metadata of the spectra with result file

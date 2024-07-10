@@ -27,9 +27,8 @@ for env_dir in ./*; do
     echo "Creating conda environment $env_name..."
     conda env create -f "$env_file"
 
-    # Skip the casanovo and spectralis directory
-    # They do not require a local install
-    if [[ "$env_name" == "casanovo" || "$env_name" == "spectralis" ]]; then
+    # Skip the casanovo directory
+    if [[ "$env_name" == "casanovo"]]; then
       echo "Skipping $env_dir..."
       cd - || exit
       continue

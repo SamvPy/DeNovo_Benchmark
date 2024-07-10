@@ -1,0 +1,18 @@
+result_path: 
+
+mgf_path: /home/samva/Doctorate/data_directory/denovo_project/test_folder/test_mgf.mgf
+
+denovo_engines: [
+  'casanovo',
+  'contranovo',
+  'pepnet',
+  'instanovo',
+  'novob',
+  'novor',
+  'pepnovo',
+  'directag'
+]
+
+output_folder: /home/samva/Doctorate/data_directory/denovo_project/test_folder
+
+exclusion_list: []

@@ -1,40 +1,7 @@
-# Run script with NovoB environment
-
-from psm_utils import PSMList
-from pyteomics import mgf
-from glob import glob
 from tqdm import tqdm
+from glob import glob
+from ..io import filter_on_charge
 import argparse
-import logging
-import os
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename="mgf_file_parsing.log", level=logging.INFO)
-
-def filter_on_charge(mgf_file_path, output_dir, max_charge):
-
-    mgf_file = mgf.read(mgf_file_path)
-    mgf_new = []
-
-    for i, spectrum in tqdm(enumerate(mgf_file), desc="Going through spectra..."):
-        try:
-            _ = spectrum["params"]["charge"][0]
-
-            if _ <= max_charge:
-                mgf_new.append(spectrum)
-
-        except:
-            continue
-    
-    mgf.write(
-        mgf_new,
-        output=output_dir + "/" + mgf_file_path.split("/")[-1],
-        header=mgf_file.header,
-    )
-
-    logging.info(
-        f"{mgf_file_path}: {i} -> {len(mgf_new)} spectra. (-{i+1-len(mgf_new)})"
-    )
 
 def main(args):
     if args.file_type == "file":

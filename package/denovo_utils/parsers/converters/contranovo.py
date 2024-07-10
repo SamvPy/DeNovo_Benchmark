@@ -19,7 +19,11 @@ def contranovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length
 
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
     _ = mgf_file.pop("charge")
-    result = pd.DataFrame(MzTab(result_path).spectrum_match_table).set_index("PSM_ID").reset_index().reset_index()
+
+    try:
+        result = pd.DataFrame(MzTab(result_path).spectrum_match_table).set_index("PSM_ID").reset_index().reset_index()
+    except:
+        return PSMList(psm_list=[])
     run = os.path.basename(result_path)
 
     # Fuse the metadata of the spectra with result file
