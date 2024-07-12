@@ -97,7 +97,7 @@ process NOVOB {
 
     // Store the novob results
     publishDir "${params.denovo_results_dir}/novob", mode: "copy", saveAs: { filename ->
-        "${mgf_file.baseName}.tsv"}, pattern: "*.txt"
+        "${mgf_file.baseName}.tsv"}, pattern: "result.txt"
 
     input:
         path mgf_file

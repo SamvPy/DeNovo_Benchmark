@@ -52,8 +52,15 @@ for env_dir in ./*; do
     # spectralis requires different installation procedure
     if [[ "$env_name" == "spectralis" ]]; then
       echo "Installing $env_dir..."
-      pip install torch
       pip install .
+      # Make sure the right cuda installation is performed
+      pip uninstall torch
+      pip install torch
+
+      # Check for CUDA availability
+      echo "Checking CUDA availability..."
+      cuda_check=$(python -c "import torch; print(torch.cuda.is_available())")
+
       conda deactivate
       cd - || exit
       echo "Finished processing $env_dir."
@@ -76,3 +83,7 @@ for env_dir in ./*; do
 done
 
 echo "All environments have been processed."
+
+if [[ "$cuda_check" == "False" ]]; then
+  echo "Warning: GPU is not visible for the spectralis environment."
+fi
