@@ -3,6 +3,9 @@ from .instanovo import instanovo_parser
 from .contranovo import contranovo_parser
 from .novob import novob_parser
 from .pepnet import pepnet_parser
+from .novor import novor_parser
+from .pepnovo import pepnovo_parser
+from .pointnovo import pointnovo_parser
 
 from enum import Enum
 from psm_utils import PSMList
@@ -12,11 +15,20 @@ from ..exceptions import DenovoEngineNotSupported
 
 # Define supported parsers for de novo search engines as an Enum with associated parser functions
 class DenovoEngineConverter(Enum):
+    """
+    Examples
+    --------
+    >>> parser = DenovoEngine.select('casanovo')
+    >>> psmlist = parser.parse('result.mztab', 'file.mgf')
+    """
     CASANOVO = ("casanovo", casanovo_parser)
     INSTANOVO = ("instanovo", instanovo_parser)
     CONTRANOVO = ("contranovo", contranovo_parser)
     NOVOB = ("novob", novob_parser)
     PEPNET = ("pepnet", pepnet_parser)
+    NOVOR = ("novor", novor_parser)
+    PEPNOVO = ("pepnovo", pepnovo_parser)
+    POINTNOVO = ("pointnovo", pointnovo_parser)
 
     def __init__(self, label, parser_func):
         self.label = label
@@ -54,6 +66,9 @@ class DenovoEngineConverter(Enum):
             - 'contranovo'
             - 'novob'
             - 'pepnet'
+            - 'novor'
+            - 'pepnovo'
+            - 'pointnovo'
         
         Returns
         -------
@@ -67,7 +82,7 @@ class DenovoEngineConverter(Enum):
         
         Examples
         --------
-        >>> parser = DenovoEngine.select('casanovo')
+        >>> parser = DenovoEngineConverter.select('casanovo')
         >>> psmlist = parser.parse('result.mztab', 'file.mgf')
         """
         for engine in cls:

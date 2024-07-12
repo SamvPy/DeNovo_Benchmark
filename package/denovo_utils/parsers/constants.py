@@ -1,4 +1,6 @@
 
+### GENERAL STUFF
+
 MODIFICATION_MAPPING = {
     "casanovo": {
         "+57.021": "[UNIMOD:4]",
@@ -41,6 +43,14 @@ MODIFICATION_MAPPING = {
         "t": "T[UNIMOD:21]",
         "y": "Y[UNIMOD:21]"
     },
+    "novor": {
+        "C(1)": "C[UNIMOD:4]",
+        "M(0)": "M[UNIMOD:35]"
+    },
+    "pepnovo": {
+        "M+16": "M[UNIMOD:35]",
+        "C": "C[UNIMOD:4]"
+    },
     "general": {
         "acetylation": "[UNIMOD:1]"
     }
@@ -73,6 +83,19 @@ def generate_all_modification_labels(mapping: dict) -> dict:
 
 ALL_MODIFICATION_LABELS = generate_all_modification_labels(MODIFICATION_MAPPING)
 
+
+EXTENSIONS = {
+    "casanovo": ".mztab",
+    "contranovo": ".mztab",
+    "instanovo": ".csv",
+    "novob": ".tsv",
+    "pepnet": ".tsv",
+    "novor": ".csv",
+    "pepnovo": ".mgf.out",
+    "directag": ".tags"
+}
+
+
 # def generate_spectralis_mod_map(all_labels: dict) -> dict:
 #     """
 #     Generate a mapping of modifications to Spectralis format.
@@ -103,6 +126,8 @@ ALL_MODIFICATION_LABELS = generate_all_modification_labels(MODIFICATION_MAPPING)
 
 # MODIFICATION_MAPPING_TO_SPECTRALIS = generate_spectralis_mod_map(ALL_MODIFICATION_LABELS)
 
+
+### SPECTRALIS STUFF
 MODIFICATION_MAPPING_TO_SPECTRALIS = {
     'Q[UNIMOD:7]': 'E',
     'N[UNIMOD:7]': 'D',
@@ -117,16 +142,44 @@ MODIFICATION_MAPPING_TO_SPECTRALIS = {
     'Y[UNIMOD:21]': 'Y',
     '[UNIMOD:1]': '',
     '[UNIMOD:5]': '',
+    '[+25.980265]': '',
+    '[UNIMOD:385]': '',
     '-': ''
 }
 
-EXTENSIONS = {
-    "casanovo": ".mztab",
-    "contranovo": ".mztab",
-    "instanovo": ".csv",
-    "novob": ".tsv",
-    "pepnet": ".tsv",
-    "novor": ".csv",
-    "pepnovo": ".mgf.out",
-    "directag": ".tags"
+### PEPNOVO STUFF
+PEPNOVO_COLUMN_MAPPING = {
+    "#Index": "index",
+    "RnkScr": "score",
+    "PnvScr": "score_pepnovo",
+    "N-Gap": "n_shift",
+    "C-Gap": "c_shift",
+    "[M+H]": "mass",
+    "Charge": "charge",
+    "Sequence": "peptide"
+}
+PEPNOVO_COLUMNS = [
+    'index',
+    'score',
+    'score_pepnovo',
+    'n_shift',
+    'c_shift',
+    'mass',
+    'charge',
+    'peptide',
+    'index',
+    'scans',
+    'title',
+    'sqs'
+]
+no_solutions = "# No solutions found."
+spectrum_error_1 = "# Could not process spectrum..."
+spectrum_error_2 = "#Problem reading spectrum..."
+too_few_peaks = "# too few peaks..."
+
+spectrum_errors = {
+    no_solutions: "no_solution",
+    spectrum_error_1: "process_error",
+    spectrum_error_2: "reading_error",
+    too_few_peaks: "sparse_spectrum"
 }
