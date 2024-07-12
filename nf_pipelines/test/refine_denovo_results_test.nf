@@ -58,7 +58,7 @@ process SPECTRALIS_PARSER {
     script:
         """
         python -m denovo_utils.parsers.scripts.spectralis_input \\
-            -r $result_file \\
+            -r ${params.result_root_dir} \\
             -m $mgf_file \\
             -d ${params.denovo_engine}
         """

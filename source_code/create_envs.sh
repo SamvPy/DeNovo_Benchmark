@@ -3,6 +3,7 @@
 # Install the denovo_utils package in its own environment
 cd ../package || exit
 conda env create -f denovo_analysis_env.yaml
+conda activate denovo_analysis_env
 pip install .
 conda deactivate
 cd ../source_code || exit
