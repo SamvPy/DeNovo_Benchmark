@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Install the denovo_utils package in its own environment
+cd ../package || exit
+conda env create -f denovo_analysis_env.yaml
+pip install .
+conda deactivate
+cd ../source_code || exit
+
 # Loop through each environment directory
 for env_dir in ./*; do
   if [ -d "$env_dir" ]; then
