@@ -25,19 +25,19 @@ rm -rf ~/miniconda3/miniconda.sh
 
 ## Create the environments by running the bash script 'create_envs.sh'
 
-1. Go to the source_code directory 
+### 1. Go to the source_code directory 
 
 ```bash
 cd DeNovo_Benchmark/source_code
 ```
 
-2. (optional if required) Download some required tools that would otherwise cause issues with environment installations:
+### 2. (optional if required) Download some required tools that would otherwise cause issues with environment installations:
 
 ```bash
 sudo apt-get install gcc
 ```
 
-3. (optional if required) Restart your shell and run the following
+### 3. (optional if required) Restart your shell and run the following
 
 ```bash
 sudo apt-get update
@@ -45,7 +45,7 @@ sudo apt-get install build-essential
 sudo apt-get install python3-dev
 ```
 
-4. Create the de novo tool conda environments using the bash script
+### 4. Create the de novo tool conda environments using the bash script
 
 ```bash
 chmod +x create_envs.sh
@@ -55,7 +55,7 @@ chmod +x create_envs.sh
 
 # Test the de novo pipeline
 
-1. Running de novo tools
+### 1. Running de novo tools
 
 Go towards the nextflow pipelines directory
 
@@ -64,7 +64,7 @@ From the root directory (DeNovo_Benchmark) , run:
 cd nf_pipelines/test
 ```
 
-2. Update the nextflow.config file
+### 2. Update the nextflow.config file
 
 To be able to run the nextflow pipeline, some paths need to be correctly configured.
 
@@ -82,7 +82,7 @@ not customely configured in parameters ``denovo_results_dir`` and ``mgf_files``
 - ``params.run``_tool: A boolean flag used to run a given tool
 - ``params.serialize``: A boolean flag to parallelize (false) or run every tool in series (true). Can be set to true if mgf-files are large and RAM is limited.
 
-3. Run a test nextflow pipeline to make sure everything works as expected
+### 3. Run a test nextflow pipeline to make sure everything works as expected
 
 When you are at the path nf_pipelines/test, and nextflow is installed, run to make predictions for peptide sequences with supported de novo tools:
 ```bash
@@ -128,13 +128,13 @@ pip install .
 pip install .
 ```
 
-4. Run pipelines with your own files!
+### 4. Run pipelines with your own files!
 
 Make sure you convert your raw data towards mgf files!
 
 Go to the folder nf_pipelines/tools to run de novo tools and get peptide sequence predictions or to nf_pipelines/refinement to post-process (rescore or finetune) de novo outputs.
 
-5. API
+### 5. API
 
 If you are experienced in python, you can fully leverage the functionalities of the denovo_utils package.
 
