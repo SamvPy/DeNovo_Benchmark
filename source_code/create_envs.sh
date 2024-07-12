@@ -32,7 +32,7 @@ for env_dir in ./*; do
     source activate "${env_name,,}_env"
 
     # casanovo requires different installation procedure
-    if [[ "$env_name" == "casanovo"]]; then
+    if [[ "$env_name" == "casanovo" ]]; then
       echo "Installing $env_dir..."
       pip install casanovo
       conda deactivate
@@ -42,7 +42,7 @@ for env_dir in ./*; do
     fi
 
     # spectralis requires different installation procedure
-    if [[ "$env_name" == "casanovo"]]; then
+    if [[ "$env_name" == "spectralis" ]]; then
       echo "Installing $env_dir..."
       pip install torch
       pip install .
