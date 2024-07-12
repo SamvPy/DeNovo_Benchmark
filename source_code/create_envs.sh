@@ -27,16 +27,30 @@ for env_dir in ./*; do
     echo "Creating conda environment $env_name..."
     conda env create -f "$env_file"
 
-    # Skip the casanovo directory
-    if [[ "$env_name" == "casanovo"]]; then
-      echo "Skipping $env_dir..."
-      cd - || exit
-      continue
-    fi
-
     # Activate the environment
     echo "Activating environment $env_name..."
     source activate "${env_name,,}_env"
+
+    # casanovo requires different installation procedure
+    if [[ "$env_name" == "casanovo"]]; then
+      echo "Installing $env_dir..."
+      pip install casanovo
+      conda deactivate
+      cd - || exit
+      echo "Finished processing $env_dir."
+      continue
+    fi
+
+    # spectralis requires different installation procedure
+    if [[ "$env_name" == "casanovo"]]; then
+      echo "Installing $env_dir..."
+      pip install torch
+      pip install .
+      conda deactivate
+      cd - || exit
+      echo "Finished processing $env_dir."
+      continue
+    fi
 
     # Install the local package using pip
     echo "Installing local package for $env_name..."
