@@ -6,6 +6,7 @@ from .pepnet import pepnet_parser
 from .novor import novor_parser
 from .pepnovo import pepnovo_parser
 from .pointnovo import pointnovo_parser
+from .external import psmutils_parser
 
 from enum import Enum
 from psm_utils import PSMList
@@ -29,6 +30,7 @@ class DenovoEngineConverter(Enum):
     NOVOR = ("novor", novor_parser)
     PEPNOVO = ("pepnovo", pepnovo_parser)
     POINTNOVO = ("pointnovo", pointnovo_parser)
+    PMSUTILS = ("psm-utils", psmutils_parser)
 
     def __init__(self, label, parser_func):
         self.label = label
@@ -69,6 +71,7 @@ class DenovoEngineConverter(Enum):
             - 'novor'
             - 'pepnovo'
             - 'pointnovo'
+            - 'psm-utils' to use the psm-utils package and infer the filetype
         
         Returns
         -------

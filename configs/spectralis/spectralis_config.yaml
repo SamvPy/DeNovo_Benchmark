@@ -56,3 +56,5 @@ prosit_ce: 0.32
 
 verbose: True
 interpret_c_as_fix: True
+
+gpu_device: "1"

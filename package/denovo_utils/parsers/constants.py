@@ -53,6 +53,9 @@ MODIFICATION_MAPPING = {
     },
     "general": {
         "acetylation": "[UNIMOD:1]"
+    },
+    "psm-utils": {
+        "None": "None"
     }
 }
 

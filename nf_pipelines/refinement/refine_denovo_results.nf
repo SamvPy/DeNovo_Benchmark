@@ -41,6 +41,7 @@ process INSTANOVO_PLUS {
             -m ${params.model_path_instanovo_diffusion} \\
             -c $mapping_file \\
             -o ${params.denovo_results_dir}/instanovoplus
+            -d ${params.gpu_device}
         """
 }
 

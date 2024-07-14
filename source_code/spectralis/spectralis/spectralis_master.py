@@ -64,7 +64,7 @@ class Spectralis():
         self.verbose = self.config['verbose']
         
         # Initialize bin reclass objects
-        self.binreclass_model = self._init_binreclass_model()
+        self.binreclass_model = self._init_binreclass_model(num=self.config["gpu_device"])
         print(f'[INFO] Loaded bin reclassification model')
         self.peptide2profiler = self._init_peptide2profile()
         self.profile2peptider = self._init_profile2peptide()
