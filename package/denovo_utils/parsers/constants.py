@@ -12,7 +12,7 @@ MODIFICATION_MAPPING = {
         "-17.027": "[UNIMOD:385]-"
     },
     "instanovo": {
-        "C(+57.02)": "C[UNIMOD:4]",
+        "C": "C[UNIMOD:4]",
         "M(ox)": "M[UNIMOD:35]",
         "M(+15.99)": "M[UNIMOD:35]",
         "N(+.98)": "N[UNIMOD:7]",
