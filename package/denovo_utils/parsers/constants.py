@@ -146,6 +146,18 @@ MODIFICATION_MAPPING_TO_SPECTRALIS = {
     '[UNIMOD:385]': '',
     '-': ''
 }
+ENGINES = [
+    "Casanovo4.2.0",
+    "InstaNovo",
+    "PepNet",
+    "ContraNovo"
+]
+ENGINES_MAPPING = {
+    "Casanovo4.2.0": "casanovo",
+    "InstaNovo": "instanovo",
+    "PepNet": "pepnet",
+    "ContraNovo": "contranovo"
+}
 
 ### PEPNOVO STUFF
 PEPNOVO_COLUMN_MAPPING = {

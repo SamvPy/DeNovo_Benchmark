@@ -92,7 +92,7 @@ def pepnovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30
     _ = mgf_file.pop("charge")
 
     # Parse the pepnovo text file towards a dataframe
-    with open(f) as f:
+    with open(result_path) as f:
         result = pepnovo_to_df(f)
 
     # Handle the dataframe as all other parsers
