@@ -146,7 +146,7 @@ class Spectralis():
             model.load_state_dict(new_checkpoint)
             
             if str(self.device) != 'cpu':
-                model.cuda()
+                model.to(self.device)
             model.eval()   
         else:
             ## For multi GPU usage
