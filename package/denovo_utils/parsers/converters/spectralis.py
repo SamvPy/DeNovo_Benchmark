@@ -174,7 +174,13 @@ class SpectralisParser():
 
     def _add_spectralis_score(self, row, spectralis_score_df):
         score = spectralis_score_df.loc[row["spectrum_id"], "Spectralis_score"]
-        row["rescoring_features"]["spectralis_score"] = float(score)
+
+        #TODO: If I want to include sequences not scored, this should return None
+        try:
+            row["rescoring_features"]["spectralis_score"] = float(score)
+        except KeyError:
+            row["rescoring_features"]["spectralis_score"] = None
+
 
 def reformat_engine_column(row):
     scan, engines = row["scans"].split("||")

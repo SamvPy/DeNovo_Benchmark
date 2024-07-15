@@ -10,6 +10,7 @@ from .external import psmutils_parser
 
 from enum import Enum
 from psm_utils import PSMList
+from psm_utils.io import FILETYPES
 
 from ..constants import MODIFICATION_MAPPING
 from ..exceptions import DenovoEngineNotSupported
@@ -36,7 +37,7 @@ class DenovoEngineConverter(Enum):
         self.label = label
         self.parser_func = parser_func
 
-    def parse(self, result_path: str, mgf_path: str) -> PSMList:
+    def parse(self, result_path: str, mgf_path: str, max_length:int = 30) -> PSMList:
         """
         Parse the results from a specified de novo search engine.
 
@@ -52,7 +53,12 @@ class DenovoEngineConverter(Enum):
         list
             A PSMList (https://psm-utils.readthedocs.io/en/latest/api/psm_utils/#psm_utils.PSMList)
         """
-        return self.parser_func(result_path, mgf_path, MODIFICATION_MAPPING[self.label])
+        return self.parser_func(
+            result_path,
+            mgf_path,
+            MODIFICATION_MAPPING[self.label],
+            max_length
+        )
 
     @classmethod
     def select(cls, label: str):
@@ -88,7 +94,12 @@ class DenovoEngineConverter(Enum):
         >>> parser = DenovoEngineConverter.select('casanovo')
         >>> psmlist = parser.parse('result.mztab', 'file.mgf')
         """
+        if label in FILETYPES.keys():
+            label = "psm-utils"
+
         for engine in cls:
             if engine.label == label:
                 return engine
-        raise DenovoEngineNotSupported(label, [e.label for e in cls])
+
+        supported_filetypes = [e.label for e in cls] + list(FILETYPES.keys())
+        raise DenovoEngineNotSupported(label, supported_filetypes)

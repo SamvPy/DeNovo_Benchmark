@@ -84,7 +84,9 @@ def pepnovo_to_df(file: TextIOWrapper) -> pd.DataFrame:
 
 
 def pepnovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
-
+    result_path = os.path.join(
+        os.path.dirname(result_path), os.path.basename(result_path).split(".")[0]+'.mgf.out'
+    )
     run = os.path.basename(result_path)
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
     # Do not trust MS1-inferred charge state

@@ -6,7 +6,7 @@ scorer_path: /home/samva/Doctorate/data_directory/denovo_project/checkpoints/spe
 
 
 ### BIN RECLASSIFICATION
-BATCH_SIZE: 16
+BATCH_SIZE: 4
 
 BIN_RESOLUTION: 1
 MAX_MZ_BIN: 2000

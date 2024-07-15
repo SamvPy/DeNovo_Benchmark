@@ -55,7 +55,11 @@ MODIFICATION_MAPPING = {
         "acetylation": "[UNIMOD:1]"
     },
     "psm-utils": {
-        "None": "None"
+        "57.02147": "UNIMOD:4",
+        "15.99492": "UNIMOD:35",
+        "42.01057": "UNIMOD:1",
+        "-17.02655": "UNIMOD:385",
+        "-18.01056": "UNIMOD:23"
     }
 }
 
@@ -95,7 +99,8 @@ EXTENSIONS = {
     "pepnet": ".tsv",
     "novor": ".csv",
     "pepnovo": ".mgf.out",
-    "directag": ".tags"
+    "directag": ".tags",
+    "percolator": ".pout"
 }
 
 
@@ -132,34 +137,41 @@ EXTENSIONS = {
 
 ### SPECTRALIS STUFF
 MODIFICATION_MAPPING_TO_SPECTRALIS = {
-    'Q[UNIMOD:7]': 'E',
-    'N[UNIMOD:7]': 'D',
-    'C[UNIMOD:4]': 'C', # L257 in spectralis_master of spectralis codebase
     '[+25.980265]-': '',
     '[UNIMOD:1]-': '',
     '[UNIMOD:5]-': '',
     '[UNIMOD:385]-': '',
     '[UNIMOD:35]': '',
-    'S[UNIMOD:21]': 'S',
-    'T[UNIMOD:21]': 'T',
-    'Y[UNIMOD:21]': 'Y',
+    '[UNIMOD:23]': '',
     '[UNIMOD:1]': '',
     '[UNIMOD:5]': '',
     '[+25.980265]': '',
     '[UNIMOD:385]': '',
-    '-': ''
+    '-': '',
+    'S[UNIMOD:21]': 'S',
+    'T[UNIMOD:21]': 'T',
+    'Y[UNIMOD:21]': 'Y',
+    'Q[UNIMOD:7]': 'E',
+    'N[UNIMOD:7]': 'D',
+    'C[UNIMOD:4]': 'C', # L257 in spectralis_master of spectralis codebase
 }
 ENGINES = [
     "Casanovo4.2.0",
     "InstaNovo",
     "PepNet",
-    "ContraNovo"
+    "ContraNovo",
+    "NovoB",
+    "Novor",
+    "PepNovo+"
 ]
 ENGINES_MAPPING = {
     "Casanovo4.2.0": "casanovo",
     "InstaNovo": "instanovo",
     "PepNet": "pepnet",
-    "ContraNovo": "contranovo"
+    "ContraNovo": "contranovo",
+    "NovoB": "novob",
+    "Novor": "novor",
+    "PepNovo+": "pepnovo"
 }
 
 ### PEPNOVO STUFF
