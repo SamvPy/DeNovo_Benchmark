@@ -1,7 +1,7 @@
 from psm_utils import PSMList, PSM
 from psm_utils.io import read_file
 import os
-from ..constants import ENGINES, ENGINES_MAPPING
+from ..constants import ENGINES, ENGINES_MAPPING, EXTENSIONS
 import pandas as pd
 from pyteomics import mgf
 from typing import Union
@@ -92,6 +92,7 @@ class SpectralisParser():
 
         spectralis_out_processed, loaded_engines = self._clean_dataframe(spectralis_out_processed)
         spectralis_out_processed["filename"] = filename_spectralis
+        print(loaded_engines)
 
         for engine in loaded_engines:
             if not overwrite and self.added_results[engine]:
@@ -103,7 +104,7 @@ class SpectralisParser():
             )
             psm_df = parser.parse(
                 result_path=os.path.join(
-                    self.results_dir, ENGINES_MAPPING[engine], self.filename
+                    self.results_dir, ENGINES_MAPPING[engine], self.filename+EXTENSIONS[ENGINES_MAPPING[engine]]
                 ),
                 mgf_path=self.mgf_path
             ).to_dataframe()

@@ -14,7 +14,7 @@ tqdm.pandas()
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="denovo_output_parsing.log", level=logging.INFO)
 
-def contranovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
+def contranovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30, **kwargs):
     result_path = os.path.splitext(result_path)[0] + ".mztab"
 
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())

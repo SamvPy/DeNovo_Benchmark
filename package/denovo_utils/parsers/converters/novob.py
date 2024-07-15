@@ -11,7 +11,7 @@ from .utils import parse_peptidoform
 
 tqdm.pandas()
 
-def novob_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
+def novob_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30, **kwargs):
     result_path = os.path.splitext(result_path)[0] + ".tsv"
 
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())

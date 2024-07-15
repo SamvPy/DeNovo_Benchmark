@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename="denovo_output_parsing.log", level=logging.INFO)
 
 
-def novor_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
+def novor_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30, **kwargs):
     
     result_path = os.path.join(
         os.path.dirname(result_path), os.path.basename(result_path).split(".")[0]+'.novor.csv'

@@ -53,11 +53,17 @@ class DenovoEngineConverter(Enum):
         list
             A PSMList (https://psm-utils.readthedocs.io/en/latest/api/psm_utils/#psm_utils.PSMList)
         """
+        if self.label not in MODIFICATION_MAPPING.keys():
+            print("No modification mapping defined for '{}'.".format(self.label))
+            mapping = {}
+        else:
+            mapping = MODIFICATION_MAPPING[self.label]
         return self.parser_func(
-            result_path,
-            mgf_path,
-            MODIFICATION_MAPPING[self.label],
-            max_length
+            result_path=result_path,
+            mgf_path=mgf_path,
+            mapping=mapping,
+            max_length=max_length,
+            label=self.label
         )
 
     @classmethod
@@ -94,8 +100,12 @@ class DenovoEngineConverter(Enum):
         >>> parser = DenovoEngineConverter.select('casanovo')
         >>> psmlist = parser.parse('result.mztab', 'file.mgf')
         """
+        # The label should be different according to support psm-utils reader
         if label in FILETYPES.keys():
-            label = "psm-utils"
+            for engine in cls:
+                if engine.label=="psm-utils":
+                    engine.label=label
+                    return engine
 
         for engine in cls:
             if engine.label == label:

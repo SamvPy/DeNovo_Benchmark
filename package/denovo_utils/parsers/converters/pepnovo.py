@@ -83,7 +83,7 @@ def pepnovo_to_df(file: TextIOWrapper) -> pd.DataFrame:
 
 
 
-def pepnovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
+def pepnovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30, **kwargs):
     result_path = os.path.join(
         os.path.dirname(result_path), os.path.basename(result_path).split(".")[0]+'.mgf.out'
     )

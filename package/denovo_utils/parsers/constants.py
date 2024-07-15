@@ -100,7 +100,8 @@ EXTENSIONS = {
     "novor": ".csv",
     "pepnovo": ".mgf.out",
     "directag": ".tags",
-    "percolator": ".pout"
+    "percolator": ".pout",
+    "sage": ".sage.tsv"
 }
 
 
@@ -162,7 +163,9 @@ ENGINES = [
     "ContraNovo",
     "NovoB",
     "Novor",
-    "PepNovo+"
+    "PepNovo+",
+    "percolator",
+    "sage"
 ]
 ENGINES_MAPPING = {
     "Casanovo4.2.0": "casanovo",
@@ -171,7 +174,9 @@ ENGINES_MAPPING = {
     "ContraNovo": "contranovo",
     "NovoB": "novob",
     "Novor": "novor",
-    "PepNovo+": "pepnovo"
+    "PepNovo+": "pepnovo",
+    "percolator": "percolator",
+    "sage": "sage"
 }
 
 ### PEPNOVO STUFF

@@ -10,7 +10,7 @@ from .utils import parse_peptidoform
 
 tqdm.pandas()
 
-def instanovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30):
+def instanovo_parser(result_path: str, mgf_path: str, mapping: dict, max_length=30, **kwargs):
     result_path = os.path.splitext(result_path)[0] + ".csv"
 
 
