@@ -54,12 +54,16 @@ MODIFICATION_MAPPING = {
     "general": {
         "acetylation": "[UNIMOD:1]"
     },
-    "psm-utils": {
+    "percolator": {
         "57.02147": "UNIMOD:4",
         "15.99492": "UNIMOD:35",
         "42.01057": "UNIMOD:1",
         "-17.02655": "UNIMOD:385",
         "-18.01056": "UNIMOD:23"
+    },
+    "sage": {
+        "+57.0215": "UNIMOD:4",
+        "+15.9949": "UNIMOD:35",
     }
 }
 

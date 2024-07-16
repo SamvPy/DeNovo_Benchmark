@@ -36,6 +36,7 @@ class DenovoEngineConverter(Enum):
     def __init__(self, label, parser_func):
         self.label = label
         self.parser_func = parser_func
+        self.psm_utils_parser=None
 
     def parse(self, result_path: str, mgf_path: str, max_length:int = 30) -> PSMList:
         """
@@ -53,17 +54,23 @@ class DenovoEngineConverter(Enum):
         list
             A PSMList (https://psm-utils.readthedocs.io/en/latest/api/psm_utils/#psm_utils.PSMList)
         """
-        if self.label not in MODIFICATION_MAPPING.keys():
-            print("No modification mapping defined for '{}'.".format(self.label))
+        if isinstance(self.psm_utils_parser, str):
+            inference_label = self.psm_utils_parser
+        else:
+            inference_label = self.label
+
+        if inference_label not in MODIFICATION_MAPPING.keys():
+            print("No modification mapping defined for '{}'.".format(inference_label))
             mapping = {}
         else:
-            mapping = MODIFICATION_MAPPING[self.label]
+            mapping = MODIFICATION_MAPPING[inference_label]
+
         return self.parser_func(
             result_path=result_path,
             mgf_path=mgf_path,
             mapping=mapping,
             max_length=max_length,
-            label=self.label
+            label=self.psm_utils_parser
         )
 
     @classmethod
@@ -104,8 +111,9 @@ class DenovoEngineConverter(Enum):
         if label in FILETYPES.keys():
             for engine in cls:
                 if engine.label=="psm-utils":
-                    engine.label=label
+                    engine.psm_utils_parser=label
                     return engine
+            raise Exception("Unexpected error.")
 
         for engine in cls:
             if engine.label == label:
