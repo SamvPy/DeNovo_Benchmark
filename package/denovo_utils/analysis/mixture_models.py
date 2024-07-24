@@ -55,11 +55,6 @@ def assign_ggm_clusters(scores, n_clusters = 4):
     covs  = gmm.fit(x).covariances_.flatten()
     weights = gmm.fit(x).weights_.flatten()
 
-    print(
-        f"Mean: {mean}\nCovariance: {covs}\nWeights: {weights}"
-    )
-
-
     return gmm.predict(scores.reshape(-1, 1)), mean, covs, weights
 
 def plot_cluster_psmtype(df, mean, covs, weights, n_clusters=4, score_col="score", psm_type_col="psm_type"):
@@ -88,3 +83,15 @@ def plot_cluster_psmtype(df, mean, covs, weights, n_clusters=4, score_col="score
         )
         ax[cluster+1].set_title("Cluster {}\nMean: {:.2f},  STD: {:.2f}".format(cluster, mean[cluster], np.sqrt(covs[cluster])))
         ax[cluster+1].set_xlim((df[score_col].min(), df[score_col].max()))
+
+def filter_highest_cluster_psms(df, source, score_col):
+
+    df = df.loc[df["source"]==source].copy()
+
+    labels, mean, covs, weights = assign_ggm_clusters(
+        df[score_col].to_numpy(), n_clusters=2
+    )
+
+    df["gmm_cluster"] = labels
+    high_cluster_label=df.groupby("gmm_cluster")[score_col].max().idxmax()
+    return df[df["gmm_cluster"]==high_cluster_label]
