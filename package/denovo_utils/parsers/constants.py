@@ -160,6 +160,7 @@ MODIFICATION_MAPPING_TO_SPECTRALIS = {
     'N[UNIMOD:7]': 'D',
     'C[UNIMOD:4]': 'C', # L257 in spectralis_master of spectralis codebase
 }
+
 ENGINES = [
     "Casanovo4.2.0",
     "InstaNovo",

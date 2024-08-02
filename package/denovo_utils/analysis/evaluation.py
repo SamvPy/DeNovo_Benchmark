@@ -191,7 +191,7 @@ def load_and_preprocess(root, filename):
     df["score"] = df.apply(collapse_casanovo_score, axis=1)
     df["psm_type"] = df.apply(get_psm_type, axis=1)
 
-    df["peptidoform"] = df.apply(drop_charge, axis=1)
+    #df["peptidoform"] = df.apply(drop_charge, axis=1) wby would I do this?
     df["peptide"] = df.apply(
         lambda x: amino_acid_converter(x, mapping_aa),
         axis=1

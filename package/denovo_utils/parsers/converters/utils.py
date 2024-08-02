@@ -1,6 +1,9 @@
 import pandas as pd
 from psm_utils import Peptidoform
+from psm_utils.peptidoform import PeptidoformException
 import logging
+import re
+import pyopenms as oms
 
 def parse_peptidoform(peptide: str, mapping: dict, max_length=30):
     peptide_parsed = peptide
@@ -18,4 +21,3 @@ def parse_peptidoform(peptide: str, mapping: dict, max_length=30):
     except:
         logging.warning(f"Failed to parse: {peptide}")
         return None
-    

@@ -1,10 +1,11 @@
 from psm_utils import Peptidoform
 
-def get_decoy_status(row):
+def get_decoy_status(row, decoy_strings=["DECOY", "rev"]):
     proteins = row["protein_list"]
     for protein in proteins:
-        if "decoy" in protein:
-            return True
+        for decoy_string in decoy_strings:
+            if decoy_string in protein:
+                return True
     return False
 
 def collapse_casanovo_score(row):
