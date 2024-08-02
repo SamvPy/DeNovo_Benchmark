@@ -1,7 +1,7 @@
 import pandas as pd
 from pyteomics import mgf
 import logging
-from .utils import parse_peptidoform
+from ...utils.proforma import parse_peptidoform
 from psm_utils import PSMList, PSM
 import os
 from tqdm import tqdm

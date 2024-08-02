@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import os
 from io import TextIOWrapper
-from .utils import parse_peptidoform
+from ...utils.proforma import parse_peptidoform
 from pyteomics import mgf
 from psm_utils import PSMList, PSM
 from tqdm import tqdm

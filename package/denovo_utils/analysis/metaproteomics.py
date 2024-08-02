@@ -1,37 +1,7 @@
 import pandas as pd
 import seaborn as sns
 from ..parsers import DenovoEngineConverter
-from .pandas_utils import get_psm_type
-
-def get_species_specificity(protein_list, fasta_dict):
-    species = []
-    for protein in protein_list:
-        for organism, org_spec_proteins in fasta_dict.items():
-            if organism in species:
-                continue
-            if protein in org_spec_proteins:
-                species.append(organism)
-    return species
-
-def count_species_peptides(df: pd.DataFrame, species_list=[], specific=True) -> pd.DataFrame:
-    if specific:
-        count_table = df.loc[df["species_n"]==1, "species"].value_counts(0).reset_index().rename(
-            columns={"species": "count_specific", "index": "species"}
-        )
-        count_table["species"] = count_table["species"].apply(lambda x: x[0])
-        return count_table
-    
-    count_dict = {
-        species: 0 for species in species_list
-    }
-    def count_species(species_list, count_dict):
-        for species in species_list:
-            count_dict[species] += 1
-    
-    df["species"].progress_apply(lambda x: count_species(x, count_dict=count_dict))
-    return pd.DataFrame({k: [v] for k, v in count_dict.items()}).melt().rename(columns={
-        "variable": "species", "value": "count_all"
-    })
+from ..utils.pandas import get_psm_type, get_species_specificity, count_species_peptides
 
 def count_analysis(path_file: str, psm_types: list, fasta_dict: dict, engine="sage", plot=True):
     """

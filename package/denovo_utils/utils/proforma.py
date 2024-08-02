@@ -4,9 +4,9 @@ from spectrum_utils import proforma
 from spectrum_utils.fragment_annotation import get_theoretical_fragments
 
 import re
-
 import pyopenms as oms
-import numpy as np
+import logging
+
 
 # Add missing modification
 modification = oms.ResidueModification()
@@ -75,6 +75,7 @@ def proforma_to_oms(peptide: str):
 
     return peptide_oms, charge
 
+
 def proforma_to_theoretical_spectrum(peptide: str, engine="spectrum-utils"):
     """
     Create a theoretical spectrum from a peptide sequence.
@@ -133,3 +134,21 @@ def proforma_to_theoretical_spectrum(peptide: str, engine="spectrum-utils"):
     
     else:
         raise Exception("Engine not suported for theoretical spectrum generation.")
+
+
+def parse_peptidoform(peptide: str, mapping: dict, max_length=30):
+    peptide_parsed = peptide
+    for k, v in mapping.items():
+        if ("-" in v) and (not peptide_parsed.startswith(k)):
+            peptide_parsed = peptide_parsed.replace(k, v[:-1])
+        else:
+            peptide_parsed = peptide_parsed.replace(k, v)
+
+    try:
+        peptidoform = Peptidoform(peptide_parsed)
+        if (len(peptidoform) > max_length) or (peptidoform.precursor_charge > 6) or (len(peptidoform) < 2):
+            return None
+        return peptidoform
+    except:
+        logging.warning(f"Failed to parse: {peptide}")
+        return None

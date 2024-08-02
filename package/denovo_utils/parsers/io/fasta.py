@@ -2,7 +2,7 @@ import re
 import pandas as pd
 from Bio import SeqIO
 
-class FastaReader:
+class FastaHandler:
     def __init__(self):
         self.read_file = False
     
@@ -115,3 +115,8 @@ class FastaReader:
             'sequence_version': sequence_version
         }
         return result
+
+
+class FastaWriter:
+    def __init__(self):
+        pass

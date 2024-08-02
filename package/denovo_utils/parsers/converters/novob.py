@@ -7,7 +7,7 @@ from psm_utils import PSM, PSMList
 
 from tqdm import tqdm
 
-from .utils import parse_peptidoform
+from ...utils.proforma import parse_peptidoform
 
 tqdm.pandas()
 

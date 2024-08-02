@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from .pandas_utils import (
+from ..utils.pandas import (
     collapse_casanovo_score,
     get_spectralis_score,
     get_psm_type,
