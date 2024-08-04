@@ -1,22 +1,21 @@
-
 ### GENERAL STUFF
 
 MODIFICATION_MAPPING = {
     "casanovo": {
         "+57.021": "[UNIMOD:4]",
         "+15.995": "[UNIMOD:35]",
-        "+0.984": "[UNIMOD:7]", # Check both D - N+0.984 and E - Q+0.984
-        "+43.006-17.027": "[+25.980265]-", # [UNIMOD:Carbamylation][UNIMOD:Ammonia-loss]
+        "+0.984": "[UNIMOD:7]",  # Check both D - N+0.984 and E - Q+0.984
+        "+43.006-17.027": "[+25.980265]-",  # [UNIMOD:Carbamylation][UNIMOD:Ammonia-loss]
         "+42.011": "[UNIMOD:1]-",
         "+43.006": "[UNIMOD:5]-",
-        "-17.027": "[UNIMOD:385]-"
+        "-17.027": "[UNIMOD:385]-",
     },
     "instanovo": {
         "C": "C[UNIMOD:4]",
         "M(ox)": "M[UNIMOD:35]",
         "M(+15.99)": "M[UNIMOD:35]",
         "N(+.98)": "N[UNIMOD:7]",
-        "Q(+.98)": "Q[UNIMOD:7]"
+        "Q(+.98)": "Q[UNIMOD:7]",
     },
     "contranovo": {
         "C+57.021": "C[UNIMOD:4]",
@@ -27,45 +26,35 @@ MODIFICATION_MAPPING = {
         "-17.027": "[UNIMOD:385]-",  # NH3 loss
         # AA mods:
         "M+15.995": "M[UNIMOD:35]",  # Met oxidation
-        "N+0.984": "N[UNIMOD:7]", # Asn deamidation
-        "Q+0.984": "Q[UNIMOD:7]"  # Gln deamidation
+        "N+0.984": "N[UNIMOD:7]",  # Asn deamidation
+        "Q+0.984": "Q[UNIMOD:7]",  # Gln deamidation
     },
-    "pepnet": {
-        "Z": "M[UNIMOD:35]",
-        "C": "C[UNIMOD:4]"
-    },
+    "pepnet": {"Z": "M[UNIMOD:35]", "C": "C[UNIMOD:4]"},
     "novob": {
         "C": "C[UNIMOD:4]",
         "m": "M[UNIMOD:35]",
         "n": "N[UNIMOD:7]",
         "q": "Q[UNIMOD:7]",
-        "s": "S[UNIMOD:21]", 
+        "s": "S[UNIMOD:21]",
         "t": "T[UNIMOD:21]",
-        "y": "Y[UNIMOD:21]"
+        "y": "Y[UNIMOD:21]",
     },
-    "novor": {
-        "C(1)": "C[UNIMOD:4]",
-        "M(0)": "M[UNIMOD:35]"
-    },
-    "pepnovo": {
-        "M+16": "M[UNIMOD:35]",
-        "C": "C[UNIMOD:4]"
-    },
-    "general": {
-        "acetylation": "[UNIMOD:1]"
-    },
+    "novor": {"C(1)": "C[UNIMOD:4]", "M(0)": "M[UNIMOD:35]"},
+    "pepnovo": {"M+16": "M[UNIMOD:35]", "C": "C[UNIMOD:4]"},
+    "general": {"acetylation": "[UNIMOD:1]"},
     "percolator": {
         "57.02147": "UNIMOD:4",
         "15.99492": "UNIMOD:35",
         "42.01057": "UNIMOD:1",
         "-17.02655": "UNIMOD:385",
-        "-18.01056": "UNIMOD:23"
+        "-18.01056": "UNIMOD:23",
     },
     "sage": {
         "+57.0215": "UNIMOD:4",
         "+15.9949": "UNIMOD:35",
-    }
+    },
 }
+
 
 # Generate a comprehensive modification dictionary
 def generate_all_modification_labels(mapping: dict) -> dict:
@@ -92,6 +81,7 @@ def generate_all_modification_labels(mapping: dict) -> dict:
 
     return all_modification_labels
 
+
 ALL_MODIFICATION_LABELS = generate_all_modification_labels(MODIFICATION_MAPPING)
 
 
@@ -105,7 +95,7 @@ EXTENSIONS = {
     "pepnovo": ".mgf.out",
     "directag": ".tags",
     "percolator": ".pout",
-    "sage": ".sage.tsv"
+    "sage": ".sage.tsv",
 }
 
 
@@ -142,23 +132,23 @@ EXTENSIONS = {
 
 ### SPECTRALIS STUFF
 MODIFICATION_MAPPING_TO_SPECTRALIS = {
-    '[+25.980265]-': '',
-    '[UNIMOD:1]-': '',
-    '[UNIMOD:5]-': '',
-    '[UNIMOD:385]-': '',
-    '[UNIMOD:35]': '',
-    '[UNIMOD:23]': '',
-    '[UNIMOD:1]': '',
-    '[UNIMOD:5]': '',
-    '[+25.980265]': '',
-    '[UNIMOD:385]': '',
-    '-': '',
-    'S[UNIMOD:21]': 'S',
-    'T[UNIMOD:21]': 'T',
-    'Y[UNIMOD:21]': 'Y',
-    'Q[UNIMOD:7]': 'E',
-    'N[UNIMOD:7]': 'D',
-    'C[UNIMOD:4]': 'C', # L257 in spectralis_master of spectralis codebase
+    "[+25.980265]-": "",
+    "[UNIMOD:1]-": "",
+    "[UNIMOD:5]-": "",
+    "[UNIMOD:385]-": "",
+    "[UNIMOD:35]": "",
+    "[UNIMOD:23]": "",
+    "[UNIMOD:1]": "",
+    "[UNIMOD:5]": "",
+    "[+25.980265]": "",
+    "[UNIMOD:385]": "",
+    "-": "",
+    "S[UNIMOD:21]": "S",
+    "T[UNIMOD:21]": "T",
+    "Y[UNIMOD:21]": "Y",
+    "Q[UNIMOD:7]": "E",
+    "N[UNIMOD:7]": "D",
+    "C[UNIMOD:4]": "C",  # L257 in spectralis_master of spectralis codebase
 }
 
 ENGINES = [
@@ -170,7 +160,7 @@ ENGINES = [
     "Novor",
     "PepNovo+",
     "percolator",
-    "sage"
+    "sage",
 ]
 ENGINES_MAPPING = {
     "Casanovo4.2.0": "casanovo",
@@ -181,7 +171,7 @@ ENGINES_MAPPING = {
     "Novor": "novor",
     "PepNovo+": "pepnovo",
     "percolator": "percolator",
-    "sage": "sage"
+    "sage": "sage",
 }
 
 ### PEPNOVO STUFF
@@ -193,21 +183,21 @@ PEPNOVO_COLUMN_MAPPING = {
     "C-Gap": "c_shift",
     "[M+H]": "mass",
     "Charge": "charge",
-    "Sequence": "peptide"
+    "Sequence": "peptide",
 }
 PEPNOVO_COLUMNS = [
-    'index',
-    'score',
-    'score_pepnovo',
-    'n_shift',
-    'c_shift',
-    'mass',
-    'charge',
-    'peptide',
-    'index',
-    'scans',
-    'title',
-    'sqs'
+    "index",
+    "score",
+    "score_pepnovo",
+    "n_shift",
+    "c_shift",
+    "mass",
+    "charge",
+    "peptide",
+    "index",
+    "scans",
+    "title",
+    "sqs",
 ]
 no_solutions = "# No solutions found."
 spectrum_error_1 = "# Could not process spectrum..."
@@ -218,5 +208,5 @@ spectrum_errors = {
     no_solutions: "no_solution",
     spectrum_error_1: "process_error",
     spectrum_error_2: "reading_error",
-    too_few_peaks: "sparse_spectrum"
+    too_few_peaks: "sparse_spectrum",
 }

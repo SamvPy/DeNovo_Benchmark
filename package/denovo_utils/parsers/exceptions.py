@@ -9,6 +9,7 @@ class DenovoEngineNotSupported(ValueError):
     allowed_values : list
         The list of allowed engine labels.
     """
+
     def __init__(self, parameter, allowed_values):
         """
         Initialize the exception with the provided parameter and allowed values.
@@ -22,7 +23,10 @@ class DenovoEngineNotSupported(ValueError):
         """
         self.parameter = parameter
         self.allowed_values = allowed_values
-        super().__init__(f"Invalid parameter value: {parameter}. Allowed values are: {allowed_values}")
+        super().__init__(
+            f"Invalid parameter value: {parameter}. Allowed values are: {allowed_values}"
+        )
+
 
 class NoResultsToMergeException(ValueError):
     """
@@ -35,10 +39,12 @@ class NoResultsToMergeException(ValueError):
     allowed_values : list
         The list of allowed engine labels.
     """
+
     def __init__(self):
         super().__init__(
             "No results in the 'results' attribute dictionary. Call the method 'read_result' first before trying to merge!"
         )
+
 
 class SeparatorCharacterInTitle(ValueError):
     """
@@ -51,6 +57,7 @@ class SeparatorCharacterInTitle(ValueError):
     allowed_values : list
         The list of allowed engine labels.
     """
+
     def __init__(self, char, title):
         super().__init__(
             f"Cannot properly use '{char}' in title '{title}' to create a splittable title name. Use a different character as separator."

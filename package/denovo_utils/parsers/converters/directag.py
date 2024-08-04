@@ -1,0 +1,1 @@
+"""DirecTag parser function."""

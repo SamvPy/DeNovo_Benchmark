@@ -1,13 +1,15 @@
-from ..converters import DenovoEngineConverter
-from ..io import psmlist_to_mgf, MGFWriter
-from ..constants import MODIFICATION_MAPPING_TO_SPECTRALIS, EXTENSIONS
 import argparse
 import os
+
+from ..constants import EXTENSIONS, MODIFICATION_MAPPING_TO_SPECTRALIS
+from ..converters import DenovoEngineConverter
+from ..io import MGFWriter, psmlist_to_mgf
+
 
 def main(args):
 
     # Parse the denovo_engines variable
-    if 'all' in args.denovo_engines:
+    if "all" in args.denovo_engines:
         engine_extension = EXTENSIONS
     else:
         engine_extension = {}
@@ -26,18 +28,18 @@ def main(args):
     writer = MGFWriter(
         mgf_path=args.mgf_path,
         modification_mapping=MODIFICATION_MAPPING_TO_SPECTRALIS,
-        output_folder=args.output_folder
+        output_folder=args.output_folder,
     )
 
     # Read in results in the writer
     for denovo_engine, extension in engine_extension.items():
         writer.read_result(
             result_path=os.path.join(
-                args.result_path, denovo_engine, filename+extension
+                args.result_path, denovo_engine, filename + extension
             ),
-            denovo_engine=denovo_engine
+            denovo_engine=denovo_engine,
         )
-    
+
     writer.merge()
     writer.write()
 
@@ -46,7 +48,7 @@ def main(args):
     #     result_path=args.result_path,
     #     mgf_path=args.mgf_path
     # )
-    
+
     # psmlist_to_mgf(
     #     psmlist=psmlist,
     #     mgf_path=args.mgf_path,
@@ -59,12 +61,37 @@ def main(args):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Write mgf files, annotated by a given de novo search")
-    parser.add_argument('-r', '--result_path', required=True, help="Path to the root folder, containing all result files.")
-    parser.add_argument('-m', '--mgf_path', required=True, help="Path to unannotated mgf-file")
-    parser.add_argument('-d', '--denovo_engines', required=True, nargs='+', help="The denovo engine used to generate the files search result file.")
-    parser.add_argument('-o', '--output_folder', default=f"{os.getcwd()}", help="Output folder to store annotated mgf-file")
-    parser.add_argument('-x', '--exclusion_list', default=[], help="List containing tags in peptides that should be dropped (e. g. modification tags...)")
+    parser = argparse.ArgumentParser(
+        description="Write mgf files, annotated by a given de novo search"
+    )
+    parser.add_argument(
+        "-r",
+        "--result_path",
+        required=True,
+        help="Path to the root folder, containing all result files.",
+    )
+    parser.add_argument(
+        "-m", "--mgf_path", required=True, help="Path to unannotated mgf-file"
+    )
+    parser.add_argument(
+        "-d",
+        "--denovo_engines",
+        required=True,
+        nargs="+",
+        help="The denovo engine used to generate the files search result file.",
+    )
+    parser.add_argument(
+        "-o",
+        "--output_folder",
+        default=f"{os.getcwd()}",
+        help="Output folder to store annotated mgf-file",
+    )
+    parser.add_argument(
+        "-x",
+        "--exclusion_list",
+        default=[],
+        help="List containing tags in peptides that should be dropped (e. g. modification tags...)",
+    )
 
     args = parser.parse_args()
 

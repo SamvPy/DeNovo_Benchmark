@@ -1,11 +1,15 @@
 import re
+
 import pandas as pd
 from Bio import SeqIO
+
+from ...utils.pandas import row_to_seqrecord
+
 
 class FastaHandler:
     def __init__(self):
         self.read_file = False
-    
+
     def read(self, path_fasta) -> None:
         entries = []
         seq_record = SeqIO.parse(path_fasta, format="fasta")
@@ -13,7 +17,7 @@ class FastaHandler:
             entry_dict = self._parse_fasta_header(entry.description)
             entry_dict["sequence"] = entry.seq
 
-            if not entry_dict["protein_id_full"]==entry.id:
+            if not entry_dict["protein_id_full"] == entry.id:
                 raise Exception(entry_dict)
             entries.append(entry_dict)
         self.dataframe = pd.DataFrame(entries)
@@ -38,10 +42,8 @@ class FastaHandler:
                     self.dataframe.columns
                 )
             )
-        
-        return self.dataframe[
-            [key, value]
-        ].groupby(key)[value].apply(list).to_dict()
+
+        return self.dataframe[[key, value]].groupby(key)[value].apply(list).to_dict()
 
     def _parse_fasta_header(self, fasta_header):
         """
@@ -58,26 +60,25 @@ class FastaHandler:
             'sequence_version'
         """
         # Regex patterns for parsing
-        entry_name_pattern = r'^(tr|sp|\w+)\|(\w+)\|'
-        protein_id_full_pattern = r'^(tr|sp|\w+\|[\w_]+(\|\S*)?)(?=\s|$)'
-        description_pattern = r' (.*?) (\w+=)'
-        tag_pattern = r'(\w+)=([^=]+?)(?=\s\w+=|$)'
+        entry_name_pattern = r"^(tr|sp|\w+)\|(\w+)\|"
+        protein_id_full_pattern = r"^(tr|sp|\w+\|[\w_]+(\|\S*)?)(?=\s|$)"
+        description_pattern = r" (.*?) (\w+=)"
+        tag_pattern = r"(\w+)=([^=]+?)(?=\s\w+=|$)"
 
         # Dictionary for mapped entries
-        entry_name_mapping = {
-            'tr': 'TrEMBL',
-            'sp': 'SwissProt'
-        }
+        entry_name_mapping = {"tr": "TrEMBL", "sp": "SwissProt"}
 
         # Parse entry name and protein ID
         entry_name_match = re.search(entry_name_pattern, fasta_header)
-        entry_name = entry_name_match.group(1) if entry_name_match else 'Other'
-        entry_name = entry_name_mapping.get(entry_name, 'Other')
+        entry_name = entry_name_match.group(1) if entry_name_match else "Other"
+        entry_name = entry_name_mapping.get(entry_name, "Other")
         protein_id = entry_name_match.group(2) if entry_name_match else None
 
         # Parse full protein ID
         protein_id_full_match = re.search(protein_id_full_pattern, fasta_header)
-        protein_id_full = protein_id_full_match.group(1) if protein_id_full_match else None
+        protein_id_full = (
+            protein_id_full_match.group(1) if protein_id_full_match else None
+        )
 
         # Parse protein description
         description_match = re.search(description_pattern, fasta_header)
@@ -87,14 +88,14 @@ class FastaHandler:
         tags = re.findall(tag_pattern, fasta_header)
         tag_dict = {tag: value for tag, value in tags}
 
-        organism = tag_dict.get('OS')
-        gene_name = tag_dict.get('GN')
-        protein_existence = tag_dict.get('PE')
-        sequence_version = tag_dict.get('SV')
+        organism = tag_dict.get("OS")
+        gene_name = tag_dict.get("GN")
+        protein_existence = tag_dict.get("PE")
+        sequence_version = tag_dict.get("SV")
 
         # If the regex of the protein name is not in UniProt format
         if isinstance(protein_id_full, type(None)):
-            if len(fasta_header.split())==1:
+            if len(fasta_header.split()) == 1:
                 protein_id_full = fasta_header
             elif isinstance(protein_description, type(None)):
                 fasta_list = fasta_header.split()
@@ -105,16 +106,32 @@ class FastaHandler:
 
         # Construct result dictionary
         result = {
-            'name': entry_name,
-            'protein_id': protein_id,
-            'protein_id_full': protein_id_full,
-            'protein_description': protein_description,
-            'organism': organism,
-            'gene_name': gene_name,
-            'protein_existence': protein_existence,
-            'sequence_version': sequence_version
+            "name": entry_name,
+            "protein_id": protein_id,
+            "protein_id_full": protein_id_full,
+            "protein_description": protein_description,
+            "organism": organism,
+            "gene_name": gene_name,
+            "protein_existence": protein_existence,
+            "sequence_version": sequence_version,
         }
         return result
+
+    @property
+    def organisms(self):
+        organisms = self.dataframe["organism"].to_list()
+        if self.dataframe["organism"].isna().sum() > 0:
+            print(
+                "Warning: Some sequences have no annotation for organism. Please fix."
+            )
+        return organisms
+
+    def write(self, boolean_filter: list[bool], out_path: str):
+        df_out = self.dataframe.loc[boolean_filter]
+        seq_records = df_out.apply(row_to_seqrecord, axis=1)
+
+        with open(out_path, "w") as f:
+            _ = SeqIO.write(sequences=seq_records, handle=f, format="fasta")
 
 
 class FastaWriter:
