@@ -19,7 +19,6 @@ process CASANOVO {
 
     output:
         path "${mgf_file.baseName}.mztab"
-        path "${mgf_file.baseName}.log"
         path serializer
 
     script:
@@ -79,7 +78,6 @@ process CONTRANOVO {
 
     output:
         path "${mgf_file.baseName}.mztab"
-        path "${mgf_file.baseName}.log"
         path serializer
 
     script:
@@ -214,7 +212,7 @@ workflow {
         if (params.serialize) {
             (instanovo_result, serializer) = INSTANOVO(mgf_files, config_instanovo.first(), serializer.first())
         }
-        else{
+        else {
             (instanovo_result, _) = INSTANOVO(mgf_files, config_instanovo.first(), serializer.first())
         }
     }

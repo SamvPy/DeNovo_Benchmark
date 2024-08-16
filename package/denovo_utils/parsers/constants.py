@@ -136,7 +136,7 @@ MODIFICATION_MAPPING_TO_SPECTRALIS = {
     "[UNIMOD:1]-": "",
     "[UNIMOD:5]-": "",
     "[UNIMOD:385]-": "",
-    "[UNIMOD:35]": "",
+   # "[UNIMOD:35]": "",
     "[UNIMOD:23]": "",
     "[UNIMOD:1]": "",
     "[UNIMOD:5]": "",

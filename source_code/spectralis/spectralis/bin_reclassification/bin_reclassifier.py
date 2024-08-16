@@ -115,6 +115,18 @@ class BinReclassifier():
 
                 ## store only nonzero
                 y_probs, y_mz_probs, b_probs, b_mz_probs, y_changes, y_mz_inputs, b_mz_inputs = self.adapt_binreclass_preds(outputs, changes, inputs)
+                
+                # Fix batches due to automatic conversion of 1D to 2D arrays
+                # This causes issues when concatenating if not fixed!
+                y_probs = fix_batch(y_probs)
+                y_mz_probs = fix_batch(y_mz_probs)
+                b_probs = fix_batch(b_probs)
+                b_mz_probs = fix_batch(b_mz_probs)
+                y_changes = fix_batch(y_changes)
+                y_mz_inputs = fix_batch(y_mz_inputs)
+                b_mz_inputs = fix_batch(b_mz_inputs)
+                
+                
                 all_y_probs.append(y_probs)
                 all_y_mz_probs.append(y_mz_probs)
                 all_b_probs.append(b_probs)
@@ -202,4 +214,17 @@ class BinReclassifier():
             return y_probs, y_mz_probs, b_probs, b_mz_probs, y_changes, y_mz_inputs, b_mz_inputs, y_mz_changes
         return y_probs, y_mz_probs, b_probs, b_mz_probs, y_changes, y_mz_inputs, b_mz_inputs
         
+def fix_batch(batch):
+    new_batch = []
+    if batch.ndim > 1:
+        for arr in batch:
+            new_batch.append(
+                np.array(arr, dtype=np.float16)
+            )
+        new_batch.append(np.array([0], dtype=np.float16))
+        new_batch_arr = np.array(new_batch)
+        new_batch_arr = new_batch_arr[:-1]
+        return new_batch_arr
     
+    else:
+        return batch

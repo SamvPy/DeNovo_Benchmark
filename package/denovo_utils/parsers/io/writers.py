@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from copy import deepcopy
 from typing import Dict
 
@@ -7,6 +8,7 @@ import pandas as pd
 from psm_utils import PSMList
 from pyteomics import mgf
 from tqdm import tqdm
+
 
 from ..converters import DenovoEngineConverter
 from ..exceptions import NoResultsToMergeException, SeparatorCharacterInTitle
@@ -167,6 +169,138 @@ class MGFWriter:
             output=os.path.join(self.output_folder, self.filename + "_annotated.mgf"),
             header=self.mgf_file.header,
         )
+
+
+def parse_title(spectrum: dict):
+    title_pattern = r"controllerType=\d+ controllerNumber=\d+ scan=(\d+)"
+    try:
+        title = spectrum["params"]["title"]
+    except KeyError:
+        return False, False
+    
+    match = re.search(title_pattern, title)
+    if match:
+        title_id = match.group(0)
+        scan_number = match.group(1)
+        return title_id, scan_number
+    else:
+        return False, False
+
+
+def parse_charge(spectrum: dict):
+
+    try:
+        charge = spectrum["params"]["charge"]
+    except KeyError:
+        return False
+    
+    if len(charge)>1:
+        logging.warning(f"{spectrum['params']['title']}: Has multiple charges ({charge})")
+    return int(charge[0])
+
+
+def parse_pepmass(spectrum: dict, silence_warning=True):
+
+    try:
+        pepmass = spectrum["params"]["pepmass"]
+        if len(pepmass)>1 and not silence_warning:
+            logging.warning(f"{spectrum['params']['title']}: Pepmass field holds multiple values. ({pepmass})")
+        return pepmass
+    except KeyError:
+        raise Exception("No pepmass field in the precursor info of MGF spectrum.")
+
+
+def check_required_fields(spectrum: dict):
+
+    start_new_index = False
+
+    # Check title field
+    title_id, _ = parse_title(spectrum)
+    if title_id == False:
+        start_new_index = True
+    
+    # Check charge field
+    _ = parse_charge(spectrum)
+
+    # Check pepmass
+    _ = parse_pepmass(spectrum, silence_warning=False)
+
+    return start_new_index
+
+
+def reformat_mgf(
+        path_mgf,
+        output_dir="",
+        min_peak_length=15,
+        max_charge=8
+    ):
+
+    mgf_file = mgf.read(path_mgf)
+    filename = os.path.basename(path_mgf)
+    filename_out = filename.replace(".mgf", "") + "_reformatted.mgf"
+    logging.info(f"\n\nParsing {filename}")
+
+    total_spectra = len(mgf_file)
+    start_new_index = check_required_fields(spectrum=mgf_file[0])
+
+    spectrum_list = []
+
+    skipped_missing_charge = 0
+    skipped_above_max_charge = 0
+    skipped_by_peak_length = 0
+
+    for i, spectrum in enumerate(mgf_file):
+        
+        if len(spectrum["m/z array"]) < min_peak_length:
+            skipped_by_peak_length += 1
+            continue
+
+        if start_new_index:
+            title, scan_id = f"controllerType=0 controllerNumber=1 scan={i}", i
+        else:
+            title, scan_id = parse_title(spectrum=spectrum)
+        
+        charge = parse_charge(spectrum=spectrum)
+        if charge==False:
+            skipped_missing_charge += 1
+            continue
+
+        if charge > max_charge:
+            skipped_above_max_charge += 1
+            continue
+
+        pepmass = parse_pepmass(spectrum=spectrum)
+        rtinseconds = spectrum["params"]["rtinseconds"]
+            
+        params = {
+            "title": title,
+            "pepmass": pepmass,
+            "rtinseconds": rtinseconds,
+            "charge": str(charge)+"+",
+            "scans": scan_id,
+        }
+        spectrum["params"] = params
+        spectrum_list.append(spectrum)
+
+    if spectrum_list == []:
+        logging.warning(f"{filename}: No spectra left after precursor info validation and filtering.")
+
+    logging.info(
+        f"\nTotal spectra: {total_spectra}; After filtering: {len(spectrum_list)}\n\t"
+        f"Filtered spectra: {total_spectra-len(spectrum_list)}\n\t" \
+        f"Peaks below{min_peak_length}: {skipped_by_peak_length}\n\t" \
+        f"No charge field: {skipped_missing_charge}\n\t" \
+        f"Above max charge ({max_charge}): {skipped_above_max_charge}"
+    )
+
+    if (skipped_missing_charge+skipped_by_peak_length) == total_spectra:
+        raise Exception("Use a charge predictor for annotation! All MGFs have missing charge field.")
+
+    mgf.write(
+        spectra=spectrum_list,
+        output=os.path.join(output_dir, filename_out),
+        header=mgf_file.header
+    )
 
 
 def proforma_to_spectralis(

@@ -3,12 +3,13 @@ import re
 import pandas as pd
 from Bio import SeqIO
 
-from ...utils.pandas import row_to_seqrecord
+from ...utils.pandas import row_to_seqrecord, prediction_to_seqrecord
 
 
 class FastaHandler:
     def __init__(self):
         self.read_file = False
+        self.extra_entries = []
 
     def read(self, path_fasta) -> None:
         entries = []
@@ -60,13 +61,13 @@ class FastaHandler:
             'sequence_version'
         """
         # Regex patterns for parsing
-        entry_name_pattern = r"^(tr|sp|\w+)\|(\w+)\|"
-        protein_id_full_pattern = r"^(tr|sp|\w+\|[\w_]+(\|\S*)?)(?=\s|$)"
+        entry_name_pattern = r"^(tr|sp|dn|\w+)\|(\w+)\|"
+        protein_id_full_pattern = r"^(tr|sp|dn|\w+\|[\w_]+(\|\S*)?)(?=\s|$)"
         description_pattern = r" (.*?) (\w+=)"
         tag_pattern = r"(\w+)=([^=]+?)(?=\s\w+=|$)"
 
         # Dictionary for mapped entries
-        entry_name_mapping = {"tr": "TrEMBL", "sp": "SwissProt"}
+        entry_name_mapping = {"tr": "TrEMBL", "sp": "SwissProt", "dn": "DeNovo"}
 
         # Parse entry name and protein ID
         entry_name_match = re.search(entry_name_pattern, fasta_header)
@@ -128,10 +129,21 @@ class FastaHandler:
 
     def write(self, boolean_filter: list[bool], out_path: str):
         df_out = self.dataframe.loc[boolean_filter]
-        seq_records = df_out.apply(row_to_seqrecord, axis=1)
+        seq_records = df_out.apply(row_to_seqrecord, axis=1).tolist()
+
+        if len(self.extra_entries) > 0:
+            seq_records += self.extra_entries
 
         with open(out_path, "w") as f:
             _ = SeqIO.write(sequences=seq_records, handle=f, format="fasta")
+
+    def add_denovo_sequences(self, df: pd.DataFrame, append=False) -> None:
+        
+        entries = df.apply(prediction_to_seqrecord, axis=1).tolist()
+        if append:
+            self.extra_entries += entries
+        else:
+            self.extra_entries = entries
 
 
 class FastaWriter:

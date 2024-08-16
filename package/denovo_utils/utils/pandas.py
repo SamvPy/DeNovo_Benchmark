@@ -1,5 +1,6 @@
 """Utilities useable on rows in a pandas dataframe with apply method."""
 
+import re
 from typing import Literal, Optional
 
 import pandas as pd
@@ -80,6 +81,8 @@ def get_decoy_status(
     bool
         True if decoy, otherwise False
     """
+    if not isinstance(row["protein_list"], list):
+        return None
     proteins = row["protein_list"]
     for protein in proteins:
         for decoy_string in decoy_strings:
@@ -209,9 +212,9 @@ def count_species_peptides(
     if specific:
         count_table = (
             df.loc[df["species_n"] == 1, "species"]
-            .value_counts(0)
+            .value_counts()
             .reset_index()
-            .rename(columns={"species": "count_specific", "index": "species"})
+            .rename(columns={"count": "count_specific", "index": "species"})
         )
         count_table["species"] = count_table["species"].apply(lambda x: x[0])
         return count_table
@@ -272,6 +275,50 @@ def row_to_seqrecord(row: pd.Series) -> SeqRecord:
             description_list.append(prefix_mapping[col] + row[col])
     description = " ".join(description_list)
     return SeqRecord(seq=sequence, id=id_, name=name, description=description)
+
+
+def prediction_to_seqrecord(row: pd.Series) -> SeqRecord:
+    """
+    Parse a row representing a de novo prediction to a biopython SeqRecord.
+
+    The row should have columns 'peptidoform', 'source', and 'spectrum_id'.
+    The peptidoform can have type str (proforma format) or Peptidoform.
+
+    The OS= tag is annotated with whatever is in 'source'. The name of the entry
+    is denovo_<scan_number>. Lastly, the protein is constructed as 
+    dn|<sequence>|.
+
+    Parameter
+    ---------
+    row: pd.Series
+        A row in a dataframe, or a series.
+    
+    Return
+    ------
+    Bio.SeqRecord.SeqRecord
+        The de novo prediction parsed as a SeqRecord object.
+    """
+    pattern_scan = r"scan=(\d+)"
+
+    sequence = Peptidoform(row["peptidoform"]).sequence
+    id_ = f"dn|{sequence}|"
+    organism = "OS=" + row["source"]
+
+    # Either just a number (indicating the scan number) or the complete spectrum_id
+    try:
+        scan_number = re.search(pattern_scan, row["spectrum_id"]).group(1)
+    except:
+        scan_number = row["spectrum_id"]
+    name = f"denovo_{scan_number}"
+
+    seqrecord = SeqRecord(
+        seq=sequence,
+        id=id_,
+        name=name,
+        description=" ".join([id_, name, organism])
+    )
+    return seqrecord
+
 
 
 # Evaluation-related utilities

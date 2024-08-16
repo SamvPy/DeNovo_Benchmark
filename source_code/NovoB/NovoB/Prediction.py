@@ -24,13 +24,13 @@ H2O = 18.0105647
 B_ION_OFFSET = Proton
 Y_ION_OFFSET = H2O + Proton
 RESOLUTION = 1000 # Max = 1000
-MAXPEPTMASS = 3000
+MAXPEPTMASS = 5000
 
 # ## Traning Data Generation
 BATCH_SIZE = 128
 BUFFER_SIZE = 3500000
 SPECTRA_MAX_LENGTH = 1010
-PEPTIDE_MAX_LENGTH = 55
+PEPTIDE_MAX_LENGTH = 50
 
 amino2idx = {'<pad>': 0, '<bos>': 1, '<eos>': 2,
              'A': 3, 'C': 4, 'D': 5, 'E': 6, 'F': 7,

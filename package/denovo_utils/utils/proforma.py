@@ -12,15 +12,23 @@ from spectrum_utils import proforma
 from spectrum_utils.fragment_annotation import get_theoretical_fragments
 
 # Add missing modification
-modification = oms.ResidueModification()
-modification.setAverageMass(-17.0305)
-modification.setFullName("Loss of ammonia")
-modification.setMonoMass(-17.026549)
-modification.setName("N-oxobutanoic")
-modification.setId("UniMod:385")
+modification_385 = oms.ResidueModification()
+modification_385.setAverageMass(-17.0305)
+modification_385.setFullName("Loss of ammonia")
+modification_385.setMonoMass(-17.026549)
+modification_385.setName("N-oxobutanoic")
+modification_385.setId("UniMod:385")
+
+modification_5 = oms.ResidueModification()
+modification_5.setAverageMass(43.0247)
+modification_5.setFullName("Carbamylation")
+modification_5.setMonoMass(43.005814)
+modification_5.setName("Carbamyl")
+modification_5.setId("UniMod:5")
 
 db = oms.ModificationsDB()
-db.addModification(modification)
+db.addModification(modification_385)
+db.addModification(modification_5)
 
 
 def proforma_to_oms(peptide: str) -> tuple[oms.AASequence, Optional[int]]:
@@ -47,6 +55,7 @@ def proforma_to_oms(peptide: str) -> tuple[oms.AASequence, Optional[int]]:
 
     # Error with UNIMOD:385
     peptide = peptide.replace("UNIMOD:385", "-17.027")
+    peptide = peptide.replace("UNIMOD:5", "43.005814")
 
     # Reformat unimod modifications
     pattern_unimod = r"\[UNIMOD:(\d+)\]"
@@ -60,11 +69,13 @@ def proforma_to_oms(peptide: str) -> tuple[oms.AASequence, Optional[int]]:
 
     # Parse N-terminal modifications
     if ")-" in peptide_oms_str:
-        nterm_modification, peptide_oms_str = peptide_oms_str.split(")-")
+        peptide_oms_list = peptide_oms_str.split(")-")
+        nterm_modification, peptide_oms_str = peptide_oms_list[-2], peptide_oms_list[-1]
         nterm_modification += ")"
         peptide_oms_str = "." + nterm_modification + peptide_oms_str + "."
     elif "]-" in peptide_oms_str:
-        nterm_modification, peptide_oms_str = peptide_oms_str.split("]-")
+        peptide_oms_list = peptide_oms_str.split("]-")
+        nterm_modification, peptide_oms_str = peptide_oms_list[-2], peptide_oms_list[-1]
         nterm_modification += "]"
         peptide_oms_str = "." + nterm_modification + peptide_oms_str + "."
 
@@ -162,6 +173,6 @@ def parse_peptidoform(
         ):
             return None
         return peptidoform
-    except ProFormaError:
+    except PeptidoformException:
         logging.warning(f"Failed to parse: {peptide}")
         return None

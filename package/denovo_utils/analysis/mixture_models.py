@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy import stats
+from scipy import optimize
 from sklearn.mixture import GaussianMixture as GMM
 
 
@@ -185,3 +186,80 @@ def filter_highest_cluster_psms(
     df["gmm_cluster"] = labels
     high_cluster_label = df.groupby("gmm_cluster")[score_col].max().idxmax()
     return df[df["gmm_cluster"] == high_cluster_label]
+
+
+def fit_2comp_gmm(scores: list) -> dict:
+
+    gmm = GMM(
+        n_components=2,
+        max_iter=1000,
+        random_state=0,
+        covariance_type="full"
+    )
+    gmm.fit(np.array(scores).reshape(-1,1))
+
+    means = []
+    covs = []
+    weights = []
+    std = []
+
+    means_ = gmm.means_.flatten()
+    covs_ = gmm.covariances_.flatten()
+    weights_ = gmm.weights_.flatten()
+
+    cluster_low = np.argmin(means_)
+    cluster_high = np.argmax(means_)
+    
+    means.append(means_[cluster_low])
+    means.append(means_[cluster_high])
+    covs.append(covs_[cluster_low])
+    covs.append(covs_[cluster_high])
+    std.append(np.sqrt(covs_[cluster_low]))
+    std.append(np.sqrt(covs_[cluster_high]))
+    weights.append(weights_[cluster_low])
+    weights.append(weights_[cluster_high])
+
+    return {
+        "mean": means,
+        "covariance": covs,
+        "weight": weights,
+        "std": std
+    }
+
+def get_threshold_gmm(gmm_dict: dict, fdr: float = .01) -> float:
+    """
+    Get the score threshold with fdr% of the low gaussian of the cumulative density above this threshold.
+
+    Parameters
+    ----------
+    gmm_dict: dict
+        Dictionary with gaussian parameters. Includes:
+            - mean: Means of the gaussians (index 0 has lowest mean)
+            - covariance
+            - weight
+            - std
+    fdr: float
+        The percentage of the low mean AUC above the score threshold
+
+    Return
+    ------
+    float
+        The score threshold. Functions as filter threshold at specified FDR.
+        None if error during computation.
+    """
+    dist_left = stats.norm(gmm_dict["mean"][0], gmm_dict["std"][0])
+    dist_right = stats.norm(gmm_dict["mean"][1], gmm_dict["std"][1])
+
+    def equation(t):
+        weighted_cdf_left = gmm_dict["weight"][0] * (1 - dist_left.cdf(t))
+        weighted_cdf_right = gmm_dict["weight"][1] * dist_right.cdf(t)
+        return weighted_cdf_left - fdr * weighted_cdf_right
+    
+    # Use bisection method to find the root.
+    try:
+        t_threshold = optimize.bisect(equation, gmm_dict["mean"][0]-3, gmm_dict["mean"][1]+3)
+    except ValueError as e:
+        print("WARNING: No cutoff found.\n", e)
+        return np.nan
+
+    return t_threshold

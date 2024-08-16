@@ -7,6 +7,8 @@ import pandas as pd
 import seaborn as sns
 import spectrum_utils.plot as sup
 import spectrum_utils.spectrum as sus
+import numpy as np
+from scipy import stats
 from pyteomics import mgf
 
 
@@ -97,3 +99,30 @@ def plot_spectrum(
     if plot:
         sup.spectrum(spectrum_su)
     return spectrum_su
+
+
+def plot_gmm_fit(scores: list, gmm_dict: dict, threshold: float):
+
+    x = np.linspace(-3, 0, 5000)
+    scores_arr = np.array(scores)
+
+    # Calculate the PDF of each normal distribution
+    pdf1 = gmm_dict["weight"][0] * stats.norm.pdf(x, gmm_dict["mean"][0], gmm_dict["std"][0])
+    pdf2 = gmm_dict["weight"][1] * stats.norm.pdf(x, gmm_dict["mean"][1], gmm_dict["std"][1])
+
+    kde = stats.gaussian_kde(scores_arr)
+    kde_obs = kde(x)
+
+    # Plot the individual distributions
+    plt.plot(x, pdf1, label='Pseudo decoys', linestyle=":")
+    plt.plot(x, pdf2, label='Pseudo targets', linestyle=":")
+
+    # Plot the mixture distribution
+    plt.plot(x, pdf1 + pdf2, label='Weighted Mixture', linestyle='--')
+    plt.plot(x, kde_obs, label="Original data", linestyle="solid", color="grey")
+
+    plt.axvline(threshold, alpha=.75)
+
+    plt.legend()
+    plt.title('GMM fit with threshold at {:.2f}'.format(threshold))
+    plt.show()

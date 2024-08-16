@@ -46,6 +46,7 @@ def casanovo_parser(
     # The CasaNovo spectra_ref columns has prefix
     # ms_run[1]:index= and the number is a count
     # of spectra, starting from 0 and going to n for a file with n spectra
+    # https://github.com/Noble-Lab/casanovo/issues/309
     mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
     _ = mgf_file.pop("charge")
     result = (
@@ -66,7 +67,7 @@ def casanovo_parser(
     assert len(result) == len(joined_file)
     if len(mgf_file) > len(joined_file):
         logging.info(
-            f"{result_path} - ContraNovo:"
+            f"{result_path} - Casanovo:"
             f" dropped {len(mgf_file)-len(joined_file)} spectra."
         )
 
