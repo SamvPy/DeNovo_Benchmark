@@ -68,7 +68,7 @@ def read_mgf(data, count=-1, default_charge=-1):
     return spectra
 
 # post correction step
-def post_correction(matrix, mass, c, ppm=10):
+def post_correction(matrix, mass, c, ppm=50):
     positional_score = np.max(matrix, axis=-1)
     seq = decode(matrix)
     pep = topep(seq)

@@ -53,7 +53,7 @@ val_check_interval: 50_000
 
 # SPECTRUM PROCESSING OPTIONS
 # Number of the most intense peaks to retain, any remaining peaks are discarded
-n_peaks: 150
+n_peaks: 200
 # Min peak m/z allowed, peaks with smaller m/z are discarded
 min_mz: 50.0
 # Max peak m/z allowed, peaks with larger m/z are discarded
@@ -63,7 +63,7 @@ min_intensity: 0.01
 # Max absolute m/z difference allowed when removing the precursor peak
 remove_precursor_tol: 2.0  # Da
 # Max precursor charge allowed, spectra with larger charge are skipped
-max_charge: 4
+max_charge: 8
 
 # MODEL ARCHITECTURE OPTIONS
 # Dimensionality of latent representations, i.e. peak embeddings

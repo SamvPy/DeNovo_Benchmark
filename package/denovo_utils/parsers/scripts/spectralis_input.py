@@ -35,7 +35,7 @@ def main(args):
     for denovo_engine, extension in engine_extension.items():
         writer.read_result(
             result_path=os.path.join(
-                args.result_path, denovo_engine, filename + extension
+                args.result_path, denovo_engine, filename + f".{denovo_engine}" + extension
             ),
             denovo_engine=denovo_engine,
         )

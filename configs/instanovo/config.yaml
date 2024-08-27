@@ -4,7 +4,7 @@ min_mz: 50.0
 max_mz: 2500.0
 min_intensity: 0.01
 remove_precursor_tol: 2.0
-max_charge: 10
+max_charge: 8
 precursor_mass_tol: 50 # ppm
 isotope_error_range: [0, 1]
 
@@ -22,7 +22,7 @@ enc_type: "instanovo"
 dec_type: "depthcharge"
 dec_precursor_sos: False
 
-max_length: 30
+max_length: 50
 residues:
   "G": 57.021464
   "A": 71.037114

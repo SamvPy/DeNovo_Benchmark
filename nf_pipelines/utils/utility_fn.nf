@@ -27,3 +27,24 @@ def matchFiles(mgf_files, result_files) {
         }
     return mgf_result_map
 }
+
+def collectFiles(root_dir, engines) {
+    def channels = Channel.empty()
+
+    // Iterate over each engine and its corresponding directory
+    engines.each { engine ->
+        def engine_dir = "${root_dir}/${engine}"
+
+        // Ensure the directory exists before proceeding
+        if (!file(engine_dir).exists()) {
+            log.warn "Directory ${engine_dir} does not exist!"
+            return
+        }
+
+        channel_engine =  Channel.fromPath("$engine_dir/*")
+        channels = channels.concat(channel_engine)
+    }
+
+    // Return the collected files
+    return channels
+}

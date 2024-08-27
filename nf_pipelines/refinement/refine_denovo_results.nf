@@ -1,4 +1,4 @@
-include { matchFiles } from '../utils/utility_fn'
+include { matchFiles; collectFiles } from '../utils/utility_fn'
 
 process INSTANOVO_PLUS_PARSER {
     conda "${params.conda_env_dir}/denovo_analysis_env"
@@ -6,7 +6,7 @@ process INSTANOVO_PLUS_PARSER {
     tag "Parsing InstaNovo output to InstaNovo+ input for ${mgf_file.baseName}..."
 
     input:
-        tuple path(mgf_file), path(result_file)
+        tuple path(mgf_file), path(result_files)
 
     output:
         path "${mgf_file.baseName}.feather"  // Parsed instanovo_plus input file
@@ -15,7 +15,6 @@ process INSTANOVO_PLUS_PARSER {
     script:
         """
         python -m denovo_utils.parsers.scripts.instanovoplus_input \\
-            -r $result_file \\
             -m $mgf_file \\
             -d ${params.denovo_engine}
         """
@@ -95,7 +94,7 @@ workflow {
     
     if (params.run_instanovoplus) {
 
-        result_files = Channel.fromPath(params.result_files)
+        result_files = collectFiles(params.result_root_dir, params.denovo_engines)
         mgf_files = Channel.fromPath(params.mgf_files)
         mgf_result_map = matchFiles(mgf_files, result_files)
 

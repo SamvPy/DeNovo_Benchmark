@@ -19,7 +19,9 @@ from .mixture_models import assign_ggm_clusters
 
 
 def get_precision_coverage_df(
-    df: pd.DataFrame, source: str, score_col: str, ground_truth_source: str = "sage"
+    df: pd.DataFrame, source: str, score_col: str, 
+    correctness_col: str,
+    ground_truth_source: str = "sage"
 ) -> pd.DataFrame:
     """
     Calculate and return precision coverage dataframe for plotting.
@@ -61,7 +63,7 @@ def get_precision_coverage_df(
     """
     all_spectra = len(df[df.source == ground_truth_source])
     selection = df[df.source == source].sort_values(score_col)
-    correctness_bool = selection["correct_prediction"].to_numpy()
+    correctness_bool = selection[correctness_col].to_numpy()
     scores = selection[score_col].to_numpy()
 
     metrics = {"TP": [], "FP": [], "FN": [], "U": [], "U_mgf": []}
@@ -75,9 +77,7 @@ def get_precision_coverage_df(
         fn = len(scores[np.logical_and(bool_negative, correctness_bool)])
 
         unpredicted = len(scores[bool_negative])
-
-        # Should be bool_positive??
-        unpredicted_mgf = all_spectra - len(scores[bool_negative])
+        unpredicted_mgf = all_spectra - len(scores[bool_positive])
 
         metrics["TP"].append(tp)
         metrics["FP"].append(fp)
@@ -98,8 +98,66 @@ def get_precision_coverage_df(
     metrics_df["coverage"] = metrics_df.apply(
         lambda x: (x["TP"] + x["FP"]) / (x["TP"] + x["FP"] + x["U"]), axis=1
     )
-    return metrics_df.dropna(0)
+    return metrics_df
 
+def get_threshold(df, threshold=.9):
+
+    for i, precision in enumerate(df.precision.to_numpy()):
+        if precision > threshold:
+            return i
+        
+def profile_accuracy_thresholds(
+    df,
+    engine,
+    score_col="score",
+    thresholds = [.99, .95, .9, .85, .8]
+):
+    df_subset = df[
+        df.source==engine
+    ].sort_values(score_col)
+    
+    df["correct_prediction"] = df["match_type"].apply(lambda x: x=="Match")
+    df["correct_prediction_lenient"] = df["match_type"].apply(lambda x: x!="Worse")
+    metrics_score = get_precision_coverage_df(
+        df,
+        source=engine,
+        score_col=score_col,
+        correctness_col="correct_prediction",
+        ground_truth_source="sage"
+    )
+    metrics_lenient = get_precision_coverage_df(
+        df,
+        source=engine,
+        score_col=score_col,
+        correctness_col="correct_prediction_lenient",
+        ground_truth_source="sage"
+    )
+    
+    score_profile = {"Accuracy": {}, "Accuracy_lenient": {}}
+    for threshold in thresholds:
+        threshold_profile = {}
+        threshold_profile_lenient = {}
+
+        iloc_threshold = get_threshold(df=metrics_score, threshold=threshold)
+        iloc_threshold_lenient = get_threshold(df=metrics_lenient, threshold=threshold)
+
+        threshold_profile["recall"] = metrics_score.iloc[iloc_threshold]["recall"]
+        threshold_profile["coverage"] = metrics_score.iloc[iloc_threshold]["coverage"]
+        threshold_profile["score"] = df_subset.iloc[iloc_threshold][score_col]
+        
+        threshold_profile_lenient["recall"] = metrics_lenient.iloc[iloc_threshold_lenient]["recall"]
+        threshold_profile_lenient["coverage"] = metrics_lenient.iloc[iloc_threshold_lenient]["coverage"]
+        threshold_profile_lenient["score"] = df_subset.iloc[iloc_threshold_lenient][score_col]
+        partition = df_subset.iloc[iloc_threshold_lenient:]["match_type"].value_counts(normalize=True)
+        for match_type in ["Match", "Better", "Worse", "Isobaric"]:
+            try:
+                threshold_profile_lenient[match_type] = partition[match_type]
+            except KeyError:
+                threshold_profile_lenient[match_type] = 0.0
+    
+        score_profile["Accuracy"][threshold] = threshold_profile
+        score_profile["Accuracy_lenient"][threshold] = threshold_profile_lenient
+    return score_profile
 
 def calculate_accuracy(
     df: pd.DataFrame, source: str, subset_spectra: list
@@ -280,9 +338,9 @@ def load_and_preprocess(root: str, filename: str) -> pd.DataFrame:
     # 2. Preprocess
     df = parser_spectralis.dataframe
     mapping_aa = {
-        "I": "L",
         "N[UNIMOD:7]": "D",
         "Q[UNIMOD:7]": "E",
+        "I": "L",
         "UNLMOD": "UNIMOD",  # Otherwise the I in UNIMOD is replaced with L
     }
 

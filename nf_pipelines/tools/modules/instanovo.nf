@@ -27,6 +27,7 @@ process INSTANOVO {
                 ${mgf_file.baseName}.ipc \\
                 ${params.model_path_instanovo} \\
                 --denovo \\
-                --output_path=${mgf_file.baseName}.instanovo.csv
+                --output_path=${mgf_file.baseName}.instanovo.csv \\
+                --knapsack_path=${params.knapsack_instanovo}
         """
 }
