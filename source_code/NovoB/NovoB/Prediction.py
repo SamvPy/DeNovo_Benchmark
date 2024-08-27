@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.keras import mixed_precision
 import sys
 import time
 import numpy as np
@@ -7,6 +8,10 @@ import math
 import argparse
 import os
 from absl import logging
+
+# Use the tensor cores
+mixed_precision.set_global_policy('mixed_float16')
+
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logging.set_verbosity(logging.ERROR)

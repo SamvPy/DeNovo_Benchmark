@@ -25,6 +25,8 @@ from instanovo.utils.metrics import Metrics
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# Use tensor cores
+torch.set_float32_matmul_precision('medium')
 
 # flake8: noqa: CR001
 def get_preds(
