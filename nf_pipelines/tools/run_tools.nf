@@ -1,8 +1,13 @@
-include { CASANOVO   } from "./modules/casanovo"
-include { INSTANOVO  } from "./modules/instanovo"
-include { CONTRANOVO } from "./modules/contranovo"
-include { PEPNET     } from "./modules/pepnet"
-include { NOVOB      } from "./modules/novob"
+include { CASANOVO    } from "./modules/casanovo"
+include { INSTANOVO   } from "./modules/instanovo"
+include { CONTRANOVO  } from "./modules/contranovo"
+include { PEPNET      } from "./modules/pepnet"
+include { NOVOB       } from "./modules/novob"
+include { SMSNET      } from "./modules/smsnet"       // Not implemented yet
+include { DEEPNOVO    } from "./modules/deepnovo"     // Not implemented yet
+include { POINTNOVO   } from "./modules/pointnovo"    // Not implemented yet
+include { PIHELIXNOVO } from "./modules/pihelixnovo"  // Not implemented yet
+include { POWERNOVO   } from "./modules/powernovo"    // Not implemented yet
 
 
 // This is coded in longform without function as dynamic process invocation didn't seem to work...
@@ -17,7 +22,7 @@ workflow RUN_TOOLS {
 
         // CONTRANOVO
         if (params.run_contranovo) {
-                        config_contranovo = Channel.fromPath(params.config_contranovo)
+            config_contranovo = Channel.fromPath(params.config_contranovo)
 
             if (params.serialize) {
                 (contranovo_result, serializer) = CONTRANOVO(mgf_files, serializer, config_contranovo.first())
@@ -55,7 +60,7 @@ workflow RUN_TOOLS {
 
         // CASANOVO
         if (params.run_casanovo) {
-                        config_casanovo = Channel.fromPath(params.config_casanovo)
+            config_casanovo = Channel.fromPath(params.config_casanovo)
 
             if (params.serialize) {
                 (casanovo_result, _, serializer) = CASANOVO(mgf_files, serializer, config_casanovo.first())
@@ -68,7 +73,7 @@ workflow RUN_TOOLS {
 
         // INSTANOVO
         if (params.run_instanovo) {
-                        config_instanovo = Channel.fromPath(params.config_instanovo)
+            config_instanovo = Channel.fromPath(params.config_instanovo)
 
             if (params.serialize) {
                 (instanovo_result, serializer) = INSTANOVO(mgf_files, serializer, config_instanovo.first())
@@ -78,6 +83,33 @@ workflow RUN_TOOLS {
             }
             results_all = results_all.concat(instanovo_result)
         }
+
+        // SMSNET
+        if (params.run_smsnet) {
+            config_smsnet = Channel.fromPath(params.config_smsnet)
+
+            if (params.serialize) {
+                (smsnet_result, serializer) = SMSNET(mgf_files, serializer, config_smsnet.first())
+            }
+            else {
+                (smsnet_result, _) = SMSNET(mgf_files, serializer, config_smsnet.first())
+            }
+            results_all = results_all.concat(smsnet_result)
+        }
+
+        // DEEPNOVO
+        if (params.run_deepnovo) {
+
+            if (params.serialize) {
+                (deepnovo_result, serializer) = DEEPNOVO(mgf_files, serializer)
+            }
+            else {
+                (deepnovo_result, _) = DEEPNOVO(mgf_files, serializer)
+            }
+            results_all = results_all.concat(deepnovo_result)
+        }
+
+
 
     emit:
         result = results_all
