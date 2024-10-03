@@ -12,7 +12,7 @@ process SMSNET {
         path config_smsnet
 
     output:
-        path "./_output/${mgf_file.baseName}"
+        path "_output/${mgf_file.baseName}"
         path serializer
 
     script:
@@ -20,7 +20,7 @@ process SMSNET {
         python -m \\
             SMSNet.run \\
                 --model_dir ${params.model_path_smsnet} \\
-                --inference_input_file $mgf_file \\
+                --inference_input_file ${mgf_file} \\
                 --config ${config_smsnet} \\
                 --rescore
         """

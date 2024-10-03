@@ -110,7 +110,6 @@ workflow RUN_TOOLS {
         }
 
 
-
     emit:
         result = results_all
 }

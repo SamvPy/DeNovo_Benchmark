@@ -9,7 +9,8 @@ def matchFiles(mgf_files, result_files) {
 
     result_map = result_files
         .map { file -> 
-        tuple (file.baseName, file)    
+        def baseName = file.baseName.split('\\.')[0]
+        tuple (baseName, file)    
     }
 
     mgf_result_map = mgf_map

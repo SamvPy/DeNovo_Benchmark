@@ -1,0 +1,320 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "MS²Rescore configuration",
+    "type": "object",
+    "required": ["ms2rescore"],
+    "properties": {
+        "ms2rescore": {
+            "description": "General MS²Rescore settings.",
+            "type": "object",
+            "required": ["psm_file"],
+            "additionalProperties": false,
+            "properties": {
+                "feature_generators": {
+                    "description": "Feature generators and their configurations.",
+                    "type": "object",
+                    "patternProperties": {
+                        ".*": { "$ref": "#/definitions/feature_generator" },
+                        "basic": {
+                            "$ref": "#/definitions/basic"
+                        },
+                        "ms2pip": {
+                            "$ref": "#/definitions/ms2pip"
+                        },
+                        "deeplc": {
+                            "$ref": "#/definitions/deeplc"
+                        },
+                        "maxquant": {
+                            "$ref": "#/definitions/maxquant"
+                        },
+                        "ionmob": {
+                            "$ref": "#/definitions/ionmob"
+                        },
+                        "im2deep": {
+                            "$ref": "#/definitions/im2deep"
+                        }
+                    },
+                    "default": {
+                        "basic": {},
+                        "ms2pip": {
+                            "model": "HCD",
+                            "ms2_tolerance": 0.02
+                        },
+                        "deeplc": {},
+                        "maxquant": {}
+                    }
+                },
+                "rescoring_engine": {
+                    "description": "Rescoring engine to use and its configuration. Leave empty to skip rescoring and write features to file.",
+                    "type": "object",
+                    "minProperties": 0,
+                    "maxProperties": 1,
+                    "patternProperties": {
+                        ".*": { "$ref": "#/definitions/rescoring_engine" },
+                        "percolator": {
+                            "$ref": "#/definitions/percolator"
+                        },
+                        "mokapot": {
+                            "$ref": "#/definitions/mokapot"
+                        }
+                    },
+                    "default": {
+                        "mokapot": {}
+                    }
+                },
+                "config_file": {
+                    "description": "Path to configuration file",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }]
+                },
+                "psm_file": {
+                    "description": "Path to file with peptide-spectrum matches.",
+                    "oneOf": [
+                        { "type": "string" },
+                        { "type": "null" },
+                        { "type": "array", "items": { "type": "string" } }
+                    ]
+                },
+                "psm_file_type": {
+                    "description": "PSM file type. By default inferred from file extension.",
+                    "type": "string",
+                    "default": "infer"
+                },
+                "psm_reader_kwargs": {
+                    "description": "Keyword arguments passed to the PSM reader.",
+                    "type": "object",
+                    "default": {}
+                },
+                "spectrum_path": {
+                    "description": "Path to spectrum file or directory with spectrum files",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }]
+                },
+                "output_path": {
+                    "description": "Path and root name for output files",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }]
+                },
+                "log_level": {
+                    "description": "Logging level",
+                    "type": "string",
+                    "enum": ["debug", "info", "warning", "error", "critical"]
+                },
+                "id_decoy_pattern": {
+                    "description": "Regex pattern used to identify the decoy PSMs in identification file.",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }],
+                    "default": null
+                },
+                "spectrum_id_pattern": {
+                    "description": "Regex pattern to extract index or scan number from spectrum file. Requires at least one capturing group.",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }],
+                    "default": "(.*)",
+                    "format": "regex"
+                },
+                "psm_id_pattern": {
+                    "description": "Regex pattern to extract index or scan number from PSM file. Requires at least one capturing group.",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }],
+                    "default": "(.*)",
+                    "format": "regex"
+                },
+                "psm_id_rt_pattern": {
+                    "description": "Regex pattern to extract retention time from PSM identifier. Requires at least one capturing group.",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }],
+                    "default": null,
+                    "format": "regex"
+                },
+                "psm_id_im_pattern": {
+                    "description": "Regex pattern to extract ion mobility from PSM identifier. Requires at least one capturing group.",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }],
+                    "default": null,
+                    "format": "regex"
+                },
+                "lower_score_is_better": {
+                    "description": "Bool indicating if lower score is better",
+                    "type": "boolean",
+                    "default": false
+                },
+                "max_psm_rank_input": {
+                    "description": "Maximum rank of PSMs to use as input for rescoring",
+                    "type": "number",
+                    "default": 10,
+                    "minimum": 1
+                },
+                "max_psm_rank_output": {
+                    "description": "Maximum rank of PSMs to return after rescoring, before final FDR calculation",
+                    "type": "number",
+                    "default": 1,
+                    "minimum": 1
+                },
+                "modification_mapping": {
+                    "description": "Mapping of modification labels to each replacement label.",
+                    "type": "object",
+                    "default": {}
+                },
+                "fixed_modifications": {
+                    "description": "Mapping of amino acids with fixed modifications to the modification name.",
+                    "type": "object",
+                    "default": {},
+                    "additionalProperties": true
+                },
+                "processes": {
+                    "description": "Number of parallel processes to use; -1 for all available",
+                    "type": "number",
+                    "multipleOf": 1,
+                    "minimum": -1,
+                    "default": -1
+                },
+                "rename_to_usi": {
+                    "description": "Convert spectrum IDs to their universal spectrum identifier",
+                    "type": "boolean"
+                },
+                "fasta_file": {
+                    "description": "Path to FASTA file with protein sequences to use for protein inference",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }]
+                },
+                "write_flashlfq": {
+                    "description": "Write results to a FlashLFQ-compatible file",
+                    "type": "boolean",
+                    "default": false
+                },
+                "write_report": {
+                    "description": "Write an HTML report with various QC metrics and charts",
+                    "type": "boolean",
+                    "default": false
+                },
+                "profile": {
+                    "description": "Write a txt report using cProfile for profiling",
+                    "type": "boolean",
+                    "default": false
+                }
+            }
+        }
+    },
+    "definitions": {
+        "feature_generator": {
+            "description": "Feature generator configuration",
+            "type": "object",
+            "additionalProperties": true
+        },
+        "rescoring_engine": {
+            "description": "Rescoring engine configuration",
+            "type": "object",
+            "additionalProperties": true
+        },
+        "basic": {
+            "$ref": "#/definitions/feature_generator",
+            "description": "Basic feature generator configuration",
+            "type": "object",
+            "additionalProperties": true
+        },
+        "ms2pip": {
+            "$ref": "#/definitions/feature_generator",
+            "description": "MS²PIP feature generator configuration",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "model": {
+                    "description": "MS²PIP model to use (see MS²PIP documentation)",
+                    "type": "string",
+                    "default": "HCD"
+                },
+                "ms2_tolerance": {
+                    "description": "MS2 error tolerance in Da",
+                    "type": "number",
+                    "minimum": 0,
+                    "default": 0.02
+                }
+            }
+        },
+        "deeplc": {
+            "$ref": "#/definitions/feature_generator",
+            "description": "DeepLC feature generator configuration",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "calibration_set_size": {
+                    "description": "Calibration set size",
+                    "oneOf": [{ "type": "integer" }, { "type": "number" }],
+                    "default": 0.15
+                }
+            }
+        },
+        "maxquant": {
+            "$ref": "#/definitions/feature_generator",
+            "description": "MaxQuant feature generator configuration",
+            "type": "object",
+            "additionalProperties": true
+        },
+        "ionmob": {
+            "$ref": "#/definitions/feature_generator",
+            "description": "Ion mobility feature generator configuration using Ionmob",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "ionmob_model": {
+                    "description": "Path to Ionmob model directory",
+                    "type": "string",
+                    "default": "GRUPredictor"
+                },
+                "reference_dataset": {
+                    "description": "Path to Ionmob reference dataset file",
+                    "type": "string",
+                    "default": "Meier_unimod.parquet"
+                },
+                "tokenizer": {
+                    "description": "Path to tokenizer json file",
+                    "type": "string",
+                    "default": "tokenizer.json"
+                }
+            }
+        },
+        "im2deep": {
+            "$ref": "#/definitions/feature_generator",
+            "description": "Ion mobility feature generator configuration using IM2Deep",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "reference_dataset": {
+                    "description": "Path to IM2Deep reference dataset file",
+                    "type": "string",
+                    "default": "Meier_unimod.parquet"
+                }
+            }
+        },
+        "mokapot": {
+            "$ref": "#/definitions/rescoring_engine",
+            "description": "Mokapot rescoring engine configuration. Additional properties are passed to the Mokapot brew function.",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "train_fdr": {
+                    "description": "FDR threshold for training Mokapot",
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "default": 0.01
+                },
+                "write_weights": {
+                    "description": "Write Mokapot weights to a text file",
+                    "type": "boolean",
+                    "default": false
+                },
+                "write_txt": {
+                    "description": "Write Mokapot results to a text file",
+                    "type": "boolean",
+                    "default": false
+                }
+            }
+        },
+        "percolator": {
+            "$ref": "#/definitions/rescoring_engine",
+            "description": "Percolator rescoring engine configuration",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "init-weights": {
+                    "description": "Weights file for scoring function",
+                    "oneOf": [{ "type": "string" }, { "type": "null" }],
+                    "default": false
+                }
+            }
+        }
+    }
+}

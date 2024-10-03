@@ -1,116 +1,48 @@
-include { matchFiles; collectFiles } from '../utils/utility_fn'
+include { refinement_workflow as  workflow_casanovo } from './refinement_workflows'
+include { refinement_workflow as  workflow_instanovo } from './refinement_workflows'
+include { refinement_workflow as  workflow_contranovo } from './refinement_workflows'
+include { refinement_workflow as  workflow_novob } from './refinement_workflows'
+include { refinement_workflow as  workflow_pepnet } from './refinement_workflows'
+include { refinement_workflow as  workflow_smsnet } from './refinement_workflows'
+include { refinement_workflow as  workflow_deepnovo } from './refinement_workflows'
+include { refinement_workflow as  workflow_pointnovo } from './refinement_workflows'
 
-process INSTANOVO_PLUS_PARSER {
-    conda "${params.conda_env_dir}/denovo_analysis_env"
-    maxForks 1
-    tag "Parsing InstaNovo output to InstaNovo+ input for ${mgf_file.baseName}..."
 
-    input:
-        tuple path(mgf_file), path(result_files)
-
-    output:
-        path "${mgf_file.baseName}.feather"  // Parsed instanovo_plus input file
-        path "${mgf_file.baseName}.json" // index-spectrum_id mapping file
-
-    script:
-        """
-        python -m denovo_utils.parsers.scripts.instanovoplus_input \\
-            -m $mgf_file \\
-            -d ${params.denovo_engine}
-        """
-
-}
-
-process INSTANOVO_PLUS {
-    conda "${params.conda_env_dir}/instanovo_env"
-    maxForks 1
-    tag "Refining sequence predictions with InstaNovo+ for ${result_file.baseName}..."
-
-    input:
-        path result_file
-        path mapping_file
-
-    output:
-        path "${result_file.baseName}.csv"
-
-    script:
-        """
-        python ${params.instanovo_plus_run_script} \\
-            -i $result_file \\
-            -m ${params.model_path_instanovo_diffusion} \\
-            -c $mapping_file \\
-            -o ${params.denovo_results_dir}/instanovoplus \\
-            -d ${params.gpu_device}
-        """
-}
-
-process SPECTRALIS_PARSER {
-    conda "${params.conda_env_dir}/denovo_analysis_env"
-    maxForks 1
-    tag "Creating annotated mgf-file for Spectralis for ${mgf_file.baseName}"
-
-    input:
-        path mgf_file
-        // tuple path(mgf_file), path(result_file)
-
-    output:
-        path "${mgf_file.baseName}_annotated.mgf"
-
-    script:
-        denovo_engines = params.denovo_engines.join(' ')
-        """
-        python -m denovo_utils.parsers.scripts.spectralis_input \\
-            -r ${params.result_root_dir} \\
-            -m $mgf_file \\
-            -d ${denovo_engines}
-        """
-}
-
-process SPECTRALIS {
-    conda "${params.conda_env_dir}/spectralis_env"
-    maxForks 1
-    tag "Using Spectralis on ${mgf_file.baseName}"
-
-    publishDir "${params.denovo_results_dir}/spectralis", mode: "copy", saveAs: { filename ->
-        "${mgf_file.baseName}_${params.spectralis_mode}.csv"}, pattern: "*.csv"
-    
-    input:
-        path mgf_file
-
-    output:
-        path "${mgf_file.baseName}_${params.spectralis_mode}.csv"
-
-    script:
-        """
-        spectralis \\
-            --mode=${params.spectralis_mode} \\
-            --input_path=$mgf_file \\
-            --output_path=${mgf_file.baseName}_${params.spectralis_mode}.csv \\
-            --config=${params.config_spectralis}
-        """
-}
-
+// Main workflow: Loop over the list of engines
 workflow {
-    
-    if (params.run_instanovoplus) {
 
-        result_files = collectFiles(params.result_root_dir, params.denovo_engines)
-        mgf_files = Channel.fromPath(params.mgf_files)
-        mgf_result_map = matchFiles(mgf_files, result_files)
+    mgf_files = Channel.fromPath(params.mgf_files)
 
-        (result_file_parsed, mapping_file) = INSTANOVO_PLUS_PARSER(mgf_result_map)
-        _ = INSTANOVO_PLUS(result_file_parsed, mapping_file)
+    if ('casanovo' in params.denovo_engines) {
+        casanovo_results = Channel.fromPath("${params.result_root_dir}/casanovo/*")
+        workflow_casanovo('casanovo', mgf_files, casanovo_results)
     }
-
-    if (params.run_spectralis) {
-
-        // result_files = Channel.fromPath(params.result_files)
-        mgf_files = Channel.fromPath(params.mgf_files)
-        // mgf_result_map = matchFiles(mgf_files, result_files)
-
-        // mgf_annotated = SPECTRALIS_PARSER(mgf_result_map)
-
-        mgf_annotated = SPECTRALIS_PARSER(mgf_files)
-        _ = SPECTRALIS(mgf_annotated)
+    if ('instanovo' in params.denovo_engines) {
+        instanovo_results = Channel.fromPath("${params.result_root_dir}/instanovo/*")
+        workflow_instanovo('instanovo', mgf_files, instanovo_results)
+    }
+    if ('contranovo' in params.denovo_engines) {
+        contranovo_results = Channel.fromPath("${params.result_root_dir}/contranovo/*")
+        workflow_contranovo('contranovo', mgf_files, contranovo_results)
+    }
+    if ('novob' in params.denovo_engines) {
+        novob_results = Channel.fromPath("${params.result_root_dir}/novob/*")
+        workflow_novob('novob', mgf_files, novob_results)
+    }
+    if ('pepnet' in params.denovo_engines) {
+        pepnet_results = Channel.fromPath("${params.result_root_dir}/pepnet/*")
+        workflow_pepnet('pepnet', mgf_files, pepnet_results)
+    }
+    if ('deepnovo' in params.denovo_engines) {
+        deepnovo_results = Channel.fromPath("${params.result_root_dir}/deepnovo/*")
+        workflow_deepnovo('deepnovo', mgf_files, deepnovo_results)
+    }
+    if ('pointnovo' in params.denovo_engines) {
+        pointnovo_results = Channel.fromPath("${params.result_root_dir}/pointnovo/*")
+        workflow_pointnovo('pointnovo', mgf_files, pointnovo_results)
+    }
+    if ('smsnet' in params.denovo_engines) {
+        smsnet_results = Channel.fromPath("${params.result_root_dir}/smsnet/*")
+        workflow_smsnet('smsnet', mgf_files, smsnet_results)
     }
 }
