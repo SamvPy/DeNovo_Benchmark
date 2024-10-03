@@ -330,10 +330,13 @@ class Profile2Peptide:
         #all_paths_unique, path_counts = np.unique(all_paths, axis=0, return_counts=True)
 
         all_aa_masses = np.diff(y_mz_bins[all_paths], axis=1)
-        #print('all_aa_masses', all_aa_masses[1])
-        #print(np.unique(all_aa_masses, axis=0))
-        
-        all_peptides = self.aa_vectorized[all_aa_masses ]
+        # print('all_aa_masses', all_aa_masses)
+        # print(np.unique(all_aa_masses, axis=0))
+    
+        try:
+            all_peptides = self.aa_vectorized[all_aa_masses.astype(int)]
+        except:
+            raise Exception(f'all_aa_masses {all_aa_masses}. vectorized {self.aa_vectorized}')
         all_peptides = self.fix_same_bin(all_peptides) ## fix cases where AAs land on the same bin e.g Q and K with binres =1
         #all_peptides = np.flip(all_peptides, axis=1) ## reverse
 
