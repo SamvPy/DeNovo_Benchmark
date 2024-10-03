@@ -49,12 +49,12 @@ def select_backbone_first(annotation_list):
     nl_annot = []
 
     for i, annotation in enumerate(annotation_list):
-        if annotation.neutral_losses:
+        if annotation.neutral_loss:
             nl_i.append(i)
             nl_annot.append(annotation)
         else:
             backbone_i.append(i)
-            backbone_annot.append(i)
+            backbone_annot.append(annotation)
     
     if len(backbone_i)==1:
         return backbone_i[0]
@@ -317,10 +317,10 @@ class AnnotatedSpectrum():
         masks = []
         for ion_type in ions:
 
-            if ion_type in spec_dict["ion_type_nl"]:
+            if np.isin(np.array([ion_type]), spec_dict["ion_type_nl"]).any():
                 self.fill_nl_ion_vectors(spec_dict, ion_type)
 
-            if ion_type not in spec_dict["ion_type"]:
+            if not np.isin(np.array([ion_type]), spec_dict["ion_type"]).any():
                 continue
     
             # TODO: Handle Immonium ion annotations

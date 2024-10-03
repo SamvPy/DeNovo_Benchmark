@@ -8,7 +8,7 @@ from psm_utils import PSM, PSMList
 from pyteomics.mgf import IndexedMGF
 import numpy as np
 
-from ..parsers import proforma_to_theoretical_spectrum
+from ..utils.proforma import proforma_to_theoretical_spectrum
 
 
 class PeakFeatureGenerator(FeatureGeneratorBase):
@@ -29,51 +29,51 @@ class PeakFeatureGenerator(FeatureGeneratorBase):
         NotImplementedError()
 
 
-class ExplainedIntensityFeatures():
-    def __init__(self):
-        self.features = {}
+# class ExplainedIntensityFeatures():
+#     def __init__(self):
+#         self.features = {}
 
-    def get_sum_intensity_iontype(self, spectrum, ion_type):
-        spectrum.isotope_matrix[ion_type]
+#     def get_sum_intensity_iontype(self, spectrum, ion_type):
+#         spectrum.isotope_matrix[ion_type]
 
-    def add_features(self, spectrum):
-        # Define a noise cutoff
-        annotation_mask = get_annotated_mask(spectrum)
-        noise_i, noise_mz = spectrum.spectrum.intensity[~annotation_mask], spectrum.spectrum.mz[~annotation_mask]
-        intensity_explained = np.sum(spectrum.spectrum.intensity[annotation_mask])
+#     def add_features(self, spectrum):
+#         # Define a noise cutoff
+#         annotation_mask = get_annotated_mask(spectrum)
+#         noise_i, noise_mz = spectrum.spectrum.intensity[~annotation_mask], spectrum.spectrum.mz[~annotation_mask]
+#         intensity_explained = np.sum(spectrum.spectrum.intensity[annotation_mask])
         
-        noise_cutoff = set_noise_cutoff(noise_i=noise_i, lod_type="lod_10")
-        above_noise = spectrum.spectrum.intensity > noise_cutoff
+#         noise_cutoff = set_noise_cutoff(noise_i=noise_i, lod_type="lod_10")
+#         above_noise = spectrum.spectrum.intensity > noise_cutoff
 
-        intensity_explained_above_noise = np.sum(spectrum.spectrum.intensity[np.logical_and(
-            annotation_mask, above_noise)
-        ])
+#         intensity_explained_above_noise = np.sum(spectrum.spectrum.intensity[np.logical_and(
+#             annotation_mask, above_noise)
+#         ])
 
-        self.features["pct_peaks_explained"] = np.sum(annotation_mask) / len(annotation_mask)
-        self.features["pct_intensity_explained"] = intensity_explained / spectrum.tic
+#         self.features["pct_peaks_explained"] = np.sum(annotation_mask) / len(annotation_mask)
+#         self.features["pct_intensity_explained"] = intensity_explained / spectrum.tic
         
-        if np.sum(above_noise)==0:
-            self.features["pct_peaks_explained_above_noise"]=0
-            self.features["pct_intensity_explained_above_noise"]=0
+#         if np.sum(above_noise)==0:
+#             self.features["pct_peaks_explained_above_noise"]=0
+#             self.features["pct_intensity_explained_above_noise"]=0
 
-        else:
-            self.features["pct_peaks_explained_above_noise"] = np.sum(np.logical_and(
-                above_noise,
-                annotation_mask
-            )) / np.sum(above_noise)
-            self.features["pct_intensity_explained_above_noise"] = intensity_explained_above_noise / np.sum(spectrum.spectrum.intensity[above_noise])
+#         else:
+#             self.features["pct_peaks_explained_above_noise"] = np.sum(np.logical_and(
+#                 above_noise,
+#                 annotation_mask
+#             )) / np.sum(above_noise)
+#             self.features["pct_intensity_explained_above_noise"] = intensity_explained_above_noise / np.sum(spectrum.spectrum.intensity[above_noise])
 
-        self.features["n_big_unannotated_peaks"] = np.sum(np.logical_and(
-            above_noise, ~annotation_mask
-        ))
+#         self.features["n_big_unannotated_peaks"] = np.sum(np.logical_and(
+#             above_noise, ~annotation_mask
+#         ))
         
-        for ion_type in "y1 y2 b1 b2 x1 x2 a1 a2 c1 c2 z1 z2".split():
-            self.features[f"{ion_type}_pct_explained"] = np.sum(spectrum.isotope_matrix[ion_type]) / intensity_explained
-        self.features["precursor_pct_explained"] = np.sum(spectrum.isotope_matrix["p"]) / intensity_explained
+#         for ion_type in "y1 y2 b1 b2 x1 x2 a1 a2 c1 c2 z1 z2".split():
+#             self.features[f"{ion_type}_pct_explained"] = np.sum(spectrum.isotope_matrix[ion_type]) / intensity_explained
+#         self.features["precursor_pct_explained"] = np.sum(spectrum.isotope_matrix["p"]) / intensity_explained
 
-        by_intensity = sum([np.sum(spectrum.isotope_matrix[i]) for i in "y1 y2 b1 b2".split()])
-        self.features["pct_precursor_fragmented"] = by_intensity / (by_intensity + np.sum(spectrum.isotope_matrix["p"]))
-        self.features["noise_cutoff"] = noise_cutoff
+#         by_intensity = sum([np.sum(spectrum.isotope_matrix[i]) for i in "y1 y2 b1 b2".split()])
+#         self.features["pct_precursor_fragmented"] = by_intensity / (by_intensity + np.sum(spectrum.isotope_matrix["p"]))
+#         self.features["noise_cutoff"] = noise_cutoff
 
 
 def set_noise_cutoff(noise_i, lod_type="lod_5"):

@@ -2,15 +2,17 @@
 
 MODIFICATION_MAPPING = {
     "casanovo": {
-        "+57.021": "[UNIMOD:4]",
-        "+15.995": "[UNIMOD:35]",
-        "+0.984": "[UNIMOD:7]",  # Check both D - N+0.984 and E - Q+0.984
+        "C+57.021": "C[UNIMOD:4]",
+        "M+15.995": "M[UNIMOD:35]",
+        "N+0.984": "N[UNIMOD:7]",
+        "Q+0.984": "Q[UNIMOD:7]",
         "+43.006-17.027": "[+25.980265]-",  # [UNIMOD:Carbamylation][UNIMOD:Ammonia-loss]
         "+42.011": "[UNIMOD:1]-",
         "+43.006": "[UNIMOD:5]-",
         "-17.027": "[UNIMOD:385]-",
     },
     "instanovo": {
+        "C(+57.02)": "C",
         "C": "C[UNIMOD:4]",
         "M(ox)": "M[UNIMOD:35]",
         "M(+15.99)": "M[UNIMOD:35]",
@@ -18,13 +20,14 @@ MODIFICATION_MAPPING = {
         "Q(+.98)": "Q[UNIMOD:7]",
     },
     "contranovo": {
-        "C+57.021": "C[UNIMOD:4]",
+        # N-terminal only
         "+43.006-17.027": "[+25.980265]-",
         "-17.027+43.006": "[+25.980265]-",
         "+42.011": "[UNIMOD:1]-",  # Acetylation
         "+43.006": "[UNIMOD:5]-",  # 5
         "-17.027": "[UNIMOD:385]-",  # NH3 loss
         # AA mods:
+        "C+57.021": "C[UNIMOD:4]",
         "M+15.995": "M[UNIMOD:35]",  # Met oxidation
         "N+0.984": "N[UNIMOD:7]",  # Asn deamidation
         "Q+0.984": "Q[UNIMOD:7]",  # Gln deamidation
@@ -84,6 +87,39 @@ def generate_all_modification_labels(mapping: dict) -> dict:
 
 ALL_MODIFICATION_LABELS = generate_all_modification_labels(MODIFICATION_MAPPING)
 
+UNSUPPORTED_MODS_INSTANOVO_PLUS = [
+    '[UNIMOD:4]',
+    '[UNIMOD:35]',
+    '[UNIMOD:7]',
+    '[+25.980265]-',
+    '[UNIMOD:1]-',
+    '[UNIMOD:5]-',
+    '[UNIMOD:385]-',
+    'C[UNIMOD:4]',
+    '[+25.980265]-',
+    'M[UNIMOD:35]',
+    'N[UNIMOD:7]',
+    'Q[UNIMOD:7]',
+    'M[UNIMOD:35]',
+    'M[UNIMOD:35]',
+    'N[UNIMOD:7]',
+    'Q[UNIMOD:7]',
+    'S[UNIMOD:21]',
+    'T[UNIMOD:21]',
+    'Y[UNIMOD:21]',
+    'C[UNIMOD:4]',
+    'M[UNIMOD:35]',
+    'M[UNIMOD:35]',
+    '[UNIMOD:1]',
+    'UNIMOD:4',
+    'UNIMOD:35',
+    'UNIMOD:1',
+    'UNIMOD:385',
+    'UNIMOD:23',
+    'UNIMOD:4',
+    'UNIMOD:35',
+    'UNIMOD:5'
+]
 
 EXTENSIONS = {
     "casanovo": ".mztab",

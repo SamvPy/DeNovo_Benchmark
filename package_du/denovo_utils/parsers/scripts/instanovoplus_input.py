@@ -7,8 +7,9 @@ import pandas as pd
 from pyteomics import mgf
 from glob import glob
 
-from ..constants import ALL_MODIFICATION_LABELS
+from ..constants import UNSUPPORTED_MODS_INSTANOVO_PLUS
 from ..converters import DenovoEngineConverter
+from ..exceptions import DenovoEngineNotSupported
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="instanovoplust_input_parsing.log", level=logging.INFO)
@@ -25,7 +26,8 @@ def proforma_to_instanovo_mod(peptidoform: str):
     for proforma_mod, instanovo_mod in proforma_to_instanovo.items():
         peptidoform = peptidoform.replace(proforma_mod, instanovo_mod)
 
-    for not_supported_mod_label in list(ALL_MODIFICATION_LABELS.values()):
+
+    for not_supported_mod_label in UNSUPPORTED_MODS_INSTANOVO_PLUS:
         if not_supported_mod_label in peptidoform:
             return None
     return peptidoform.split("/")[0]
@@ -42,9 +44,17 @@ def main(args):
     df_list = []
 
     for filepath in glob(f"./{filename}.*"):
-        engine = filepath.split(".")[1]
+        if filepath.endswith(".mgf"):
+            continue
+        engine = os.path.basename(filepath).split(".")[1]
 
-        denovo_engine = DenovoEngineConverter.select(label=engine)
+        try:
+            denovo_engine = DenovoEngineConverter.select(label=engine)
+        except DenovoEngineNotSupported as err:
+            logging.info(err)
+            logging.info("Skipping {}...".format(filepath))
+            continue
+
         psmlist = denovo_engine.parse(result_path=filepath, mgf_path=args.mgf_path)
 
         df = psmlist.to_dataframe()
@@ -63,7 +73,6 @@ def main(args):
                 "precursor_charge",
             ],
         ]
-        df["title"] = df["title"].apply(lambda x: x+f"||{engine}")
 
         mgf_df = pd.DataFrame(mgf.read(args.mgf_path))
         mgf_df = pd.concat(
@@ -75,10 +84,11 @@ def main(args):
         )[["title", "m/z array", "intensity array"]]
 
         df = df.merge(mgf_df, on="title")
+        df["title"] = df["title"].apply(lambda x: x+f"||{engine}")
 
         df_list.append(df)
 
-    dfs = pd.concat(df_list)
+    dfs = pd.concat(df_list, ignore_index=True)
 
     dfs = dfs.reset_index()
     index_map = dfs[["index", "title"]].set_index("index").to_dict("index")

@@ -23,9 +23,8 @@ def get_annotated_spectrum(
         mz=mgf_spectrum["m/z array"],
         intensity=mgf_spectrum["intensity array"],
         retention_time=mgf_spectrum["params"]["rtinseconds"]
-    ).annotate_proforma(psm["peptidoform"].proforma, .02, "Da", ions, neutral_losses=neutral_losses, max_ion_charge=2)
+    ).annotate_proforma(psm["peptidoform"].proforma, 50, "ppm", ions, neutral_losses=neutral_losses, max_ion_charge=2)
     return spectrum
-
 
 def get_missing_fragmentations(
         ion_vectors,
@@ -162,17 +161,15 @@ class MissingFragmentationSiteFGen(FeatureGeneratorBase):
                             {"peptide_evidence": pe}
                         )
 
-                    
-
                 else:
                     for i, psm in tqdm(enumerate(psm_list_run), total=len(psm_list_run)):
 
-                        pe, features = self._calculate_features(psm=psm)
+                        meta, features = self._calculate_features(psm=psm)
                         psm["rescoring_features"].update(
                             features
                         )
                         psm["metadata"].update(
-                            {"peptide_evidence": pe}
+                            meta
                         )
 
 
@@ -226,7 +223,7 @@ class MissingFragmentationSiteFGen(FeatureGeneratorBase):
             f"{set_type}missing_frag_proportion": missing_frag_proportion
         }
 
-    def _calculate_features(self, psm, processing_result=None):
+    def _calculate_features(self, psm, processing_result=None, ions="by"):
 
         if self.only_by_ions:
             peptide_evidence = self.processing_result_to_peptide_evidence(processing_result)
@@ -234,7 +231,7 @@ class MissingFragmentationSiteFGen(FeatureGeneratorBase):
 
         else:
             sa = AnnotatedSpectrum(
-                spectrum=get_annotated_spectrum(mgf_file=self.mgf_file, psm=psm, ions="by", neutral_losses=True),
+                spectrum=get_annotated_spectrum(mgf_file=self.mgf_file, psm=psm, ions=ions, neutral_losses=True),
                 peplen=len(psm["peptidoform"].sequence),
                 process=True
             )
@@ -254,5 +251,10 @@ class MissingFragmentationSiteFGen(FeatureGeneratorBase):
             features = self.peptide_evidence_to_features(psm, peptide_evidence=peptide_evidence)
             features_nl = self.peptide_evidence_to_features(psm, peptide_evidence=peptide_evidence_nl, set_type="NL_")
             features.update(features_nl)
+        
+        metadata = {
+            "annotated_spectrum": sa,
+            "peptide_evidence": peptide_evidence
+        }
 
-        return peptide_evidence, features
+        return metadata, features

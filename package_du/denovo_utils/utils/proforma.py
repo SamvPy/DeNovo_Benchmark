@@ -158,9 +158,19 @@ def parse_peptidoform(
         Ignores peptide sequences with longer residues.
     """
     peptide_parsed = peptide
+
+    # If missing prediction for particalur spectrum
+    if peptide.startswith('nan/'):
+        return None
+
     for k, v in mapping.items():
-        if ("-" in v) and (not peptide_parsed.startswith(k)):
-            peptide_parsed = peptide_parsed.replace(k, v[:-1])
+        # Make sure N-terminal mods occur N-terminally!
+        if ("-" in v):
+            if peptide_parsed.startswith(k):
+                peptide_parsed = peptide_parsed.replace(k, v, 1)
+            if k in peptide_parsed:
+                logging.warning(f"Mapping string is not consistent for {peptide} ({v})")
+                return None
         else:
             peptide_parsed = peptide_parsed.replace(k, v)
 
