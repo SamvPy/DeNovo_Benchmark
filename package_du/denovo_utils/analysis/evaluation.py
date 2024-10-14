@@ -19,7 +19,9 @@ from .mixture_models import assign_ggm_clusters
 
 
 def get_precision_coverage_df(
-    df: pd.DataFrame, source: str, score_col: str, 
+    df: pd.DataFrame, 
+    source: str, 
+    score_col: str, 
     correctness_col: str,
     ground_truth_source: str = "sage"
 ) -> pd.DataFrame:
@@ -62,7 +64,9 @@ def get_precision_coverage_df(
     - coverage_mgf: (TP + FP) / (TP + FP + U_mgf)
     """
     all_spectra = len(df[df.source == ground_truth_source])
-    selection = df[df.source == source].sort_values(score_col)
+    spectrum_ids = df[df.source==ground_truth_source].spectrum_id.tolist()
+    selection = df[(df.source == source) & 
+                   (df.spectrum_id.isin(spectrum_ids))].sort_values(score_col)
     correctness_bool = selection[correctness_col].to_numpy()
     scores = selection[score_col].to_numpy()
 

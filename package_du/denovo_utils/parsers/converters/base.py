@@ -17,7 +17,6 @@ from .pepnet import pepnet_parser
 from .pepnovo import pepnovo_parser
 from .pointnovo import pointnovo_parser
 
-
 # Define supported parsers for de novo search engines as
 # an Enum with associated parser functions
 class DenovoEngineConverter(Enum):
@@ -33,6 +32,10 @@ class DenovoEngineConverter(Enum):
     -------
     >>> parser = DenovoEngine.select('casanovo')
     >>> psmlist = parser.parse('result.mztab', 'file.mgf')
+
+    For refinement with spectralis or instanovo+
+    >>> from denovo_utils.parsers.converters import add_refinement
+    >>> add_refinement(psmlist, 'result_spectralis.csv', 'spectralis')
     """
 
     CASANOVO = ("casanovo", casanovo_parser)
@@ -69,7 +72,12 @@ class DenovoEngineConverter(Enum):
         self.parser_func = parser_func
         self.psm_utils_parser = None
 
-    def parse(self, result_path: str, mgf_path: str, max_length: int = 30) -> PSMList:
+    def parse(
+            self,
+            result_path: str,
+            mgf_path: str,
+            max_length: int = 30
+        ) -> PSMList:
         """
         Parse the results from a specified de novo search engine.
 
@@ -103,7 +111,7 @@ class DenovoEngineConverter(Enum):
             mapping=mapping,
             max_length=max_length,
             label=self.psm_utils_parser,
-        )
+        )       
 
     @classmethod
     def select(cls, label: str):

@@ -19,7 +19,7 @@ UNIMOD_MOD_COMP = {
     "[UNIMOD:23]": Composition({"H": -2, "O": -1}),
     "[UNIMOD:35]": Composition({"O": 1}),
     "[UNIMOD:385]": Composition({"H": -3, "N": -1}),
-    "[+25.980265]": Composition({"H": 4, "C": 1, "N": 2, "O": 1}),
+    "[+25.980265]": Composition({"H": -2, "C": 1, "O": 1}),
 }
 UNIMOD_LIST = [
     "[UNIMOD:1]",

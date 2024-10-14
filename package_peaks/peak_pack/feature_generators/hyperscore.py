@@ -41,6 +41,7 @@ def proforma_to_oms(peptide: str) -> tuple[oms.AASequence, Optional[int]]:
     # Error with UNIMOD:385
     peptide = peptide.replace("UNIMOD:385", "-17.027")
     peptide = peptide.replace("UNIMOD:5", "43.005814")
+    peptide = peptide.replace("Formula:H-2C1O1", "+25.980265")
 
     # Reformat unimod modifications
     pattern_unimod = r"\[UNIMOD:(\d+)\]"
@@ -181,9 +182,9 @@ def calculate_hyperscore(
 
 class HyperscoreGenerator(FeatureGeneratorBase):
     """MS2Rescore type feature generator for ppm-errors"""
-    def __init__(self, config, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Initialize feature generator class."""
-        self.config = config
+        self.config = kwargs
         super().__init__(*args, **kwargs)
 
     @property

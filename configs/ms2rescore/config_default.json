@@ -1,0 +1,107 @@
+{
+    "$schema": "./config_schema.json",
+    "ms2rescore": {
+        "feature_generators": {
+            "basic": {},
+            "ms2pip": {
+                "model": "HCD",
+                "ms2_tolerance": 0.02,
+                "processes": 8
+            },
+            "deeplc": {
+                "deeplc_retrain": true
+            },
+            "maxquant": {},
+            "peak_fgen": {
+                "ion_types": [
+                    "a1",
+                    "a2",
+                    "b1",
+                    "b2",
+                    "c1",
+                    "c2",
+                    "y1",
+                    "y2",
+                    "z1",
+                    "z2",
+                    "x1",
+                    "x2",
+                    "p1",
+                    "p2",
+                    "p3"
+                ],
+                "neutral_losses": [
+                    "",
+                    "-H2O1"
+                ],
+                "max_workers": 8,
+                "ion_types_evidence": ["b1", "y1", "b2", "y2"],
+                "neutral_losses_evidence": ["", "-H2O1"],
+                "fragment_tol_mass": 20,
+                "fragment_tol_mode": "ppm"
+            }
+        },
+        "rescoring_engine": {
+            "mokapot": {
+                "train_fdr": 0.01,
+                "write_weights": true,
+                "write_txt": true,
+                "save_models": true
+            }
+        },
+        "config_file": null,
+        "psm_file": null,
+        "psm_file_type": "infer",
+        "psm_reader_kwargs": {},
+        "spectrum_path": null,
+        "output_path": null,
+        "log_level": "info",
+        "id_decoy_pattern": null,
+        "psm_id_pattern": null,
+        "spectrum_id_pattern": null,
+        "psm_id_rt_pattern": null,
+        "psm_id_im_pattern": null,
+        "lower_score_is_better": false,
+        "max_psm_rank_input": 10,
+        "max_psm_rank_output": 1,
+        "modification_mapping": {
+            "+43.006": "UNIMOD:5",
+            "-17.027": "UNIMOD:385",
+            "+42.011": "UNIMOD:1",
+            "+25.980265": "Formula:H-2C1O1"
+        },
+        "fixed_modifications": {},
+        "processes": -1,
+        "rename_to_usi": false,
+        "fasta_file": null,
+        "write_flashlfq": false,
+        "write_report": false,
+        "rescoring_features": [
+            "hyperscore",
+            "missing_frag_sites",
+            "missing_frag_pct",
+            "ppm_mean_y",
+            "ppm_mean_b",
+            "explained_y_pct",
+            "explained_b_pct",
+            "explained_all_pct",
+            "charge_n",
+            "charge_2",
+            "charge_3",
+            "charge_4",
+            "charge_5",
+            "spec_pearson",
+            "spec_spearman",
+            "cos",
+            "dotprod",
+            "cos_iony",
+            "iony_spearman",
+            "observed_retention_time",
+            "predicted_retention_time",
+            "rt_diff",
+            "observed_retention_time_best",
+            "predicted_retention_time_best",
+            "rt_diff_best"
+        ]
+    }
+}

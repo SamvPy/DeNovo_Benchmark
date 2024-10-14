@@ -3,6 +3,14 @@ from typing import List
 from psm_utils import PSM, PSMList
 import logging
 import numpy as np
+from pyteomics import mgf
+
+from .explained_intensity import ExplainedIntensityFeatures
+from .hyperscore import HyperscoreGenerator
+from .missing_fragmentation import MissingFragmentationFeatures
+from .peak_features import PeakFeatures
+from .ppm_error import PPMFeatures
+
 from ..annotation.evidence import PeptideEvidence
 from ..annotation.process import parallel_annotate_psms
 from ..utils import ion_dict_to_matrix
@@ -10,15 +18,23 @@ from ..utils import ion_dict_to_matrix
 class PeakFeatureGenerator(FeatureGeneratorBase):
     """MS2Rescore type feature generator for peak-type features."""
 
-    def __init__(self, feature_generators, config):
+    def __init__(self, *args, **kwargs):
         """
         Initialize feature generator class.
         
         Specify which feature types should be included.
         """
-        self.fgens = feature_generators
+        self.config = kwargs
+        self.fgens = [
+            PeakFeatures(),
+            MissingFragmentationFeatures(),
+            HyperscoreGenerator(**kwargs),
+            PPMFeatures(),
+            ExplainedIntensityFeatures()
+        ]
+        
         self.annotate = not ((len(self.fgens)==1) and (self.fgens[0].name=="general"))
-        self.config = config
+        self.args = args
 
     @property
     def feature_names(self) -> List[str]:
@@ -44,10 +60,11 @@ class PeakFeatureGenerator(FeatureGeneratorBase):
             "hyperscore"
         ]
 
-    def add_features(self, psm_list: PSMList, mgf_file) -> None:
+    def add_features(self, psm_list: PSMList) -> None:
         """Compute and add rescoring features to psmlist."""
 
         logging.info("Retrieving spectra...")
+        mgf_file = mgf.read(self.config["spectrum_path"])
         spectra = mgf_file.get_by_ids([psm.spectrum_id for psm in psm_list])
         logging.info("Done.")
 

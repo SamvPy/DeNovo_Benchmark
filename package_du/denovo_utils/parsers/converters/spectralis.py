@@ -13,6 +13,7 @@ from .base import DenovoEngineConverter
 
 tqdm.pandas()
 
+## LEGACY
 
 class SpectralisParser:
     """SpectralisParser class."""
