@@ -106,7 +106,7 @@ def novor_parser(
                 "scans": x["scans_x"],
                 "err(data-denovo)": x["err(data-denovo)"],
                 "ppm_error": x["ppm(1e6*err/(mz*z))"],
-                "aaScore": x["aaScore"],
+                "aa_scores": x["aaScore"],
             },
         ),
         axis=1,

@@ -208,7 +208,7 @@ def pepnovo_parser(
             metadata={
                 "n_shift": x["n_shift"],
                 "c_shift": x["c_shift"],
-                "score_pepnovo": x["score_pepnovo"],
+                "aa_scores": x["score_pepnovo"],
                 "scans": x["scans_y"],
             },
         ),

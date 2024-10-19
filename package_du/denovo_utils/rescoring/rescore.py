@@ -16,7 +16,10 @@ import psm_utils.io
 from mokapot.dataset import LinearPsmDataset
 from psm_utils import PSMList
 import pandas as pd
+import pickle
+from psm_utils.io.parquet import ParquetWriter
 
+from ms2rescore import parse_configurations
 from ms2rescore import exceptions
 from ms2rescore.feature_generators import FEATURE_GENERATORS
 from ms2rescore.parse_psms import parse_psms
@@ -253,12 +256,10 @@ class DeNovoRescorer:
             psm_list = _calculate_confidence(psm_list)
 
         else:
-            for psm in psm_list:
+            for psm, ms2rescore_score in zip(psm_list, scores):
                 psm["provenance_data"].update(
-                    {f"score_{psm.source}": psm["score"]}
+                    {f"score_ms2rescore": str(ms2rescore_score)}
                 )
-            psm_list["score"] = scores
-
     
 def _predict(dset, models):
     """
@@ -284,3 +285,61 @@ def _predict(dset, models):
         scores.append(model.predict(test_set))
     
     return np.array(scores).mean(axis=0)
+
+
+def load_configuration(
+        path_config_ms2rescore,
+        psm_file,
+        spectrum_path
+    ):
+    with open(path_config_ms2rescore) as config_file:
+        configuration = json.load(config_file)
+    configuration["ms2rescore"]["psm_file"] = psm_file
+    configuration["ms2rescore"]["spectrum_path"] = spectrum_path
+    configuration = parse_configurations(configurations=configuration)
+    return configuration
+
+
+def load_rescorer(rescorer, mokapot_folder, fgen_path, psm_path=None):
+    if psm_path is not None:
+        with open(psm_path, "rb") as f:
+            psm_list = pickle.load(f)
+    else:
+        psm_list = None
+
+    with open(fgen_path, "rb") as f:
+        fgens = pickle.load(f)
+
+    models = []
+    for i in range(3):
+        with open(os.path.join(mokapot_folder, f"mokapot_model_{i}.pkl"), "rb") as f:
+            models.append(pickle.load(f))
+
+    rescorer.fgens = fgens
+    rescorer.mokapot_models = models
+    return psm_list
+
+def save_object(obj, obj_path, filetype='pickle'):
+    os.makedirs(os.path.dirname(obj_path), exist_ok=True)
+
+    if filetype=='pickle':
+        with open(obj_path, "wb") as f:
+            pickle.dump(obj, f)
+    elif filetype=='parquet':
+        if isinstance(obj, PSMList):
+            w = ParquetWriter(path=obj_path)
+            w.write_file(obj)
+        else:
+            raise Exception(f"Cannot write object with type {type(obj)} to parquet. Must be type {type(PSMList)}.")
+
+
+def already_trained(
+        save_psm_path,
+        save_fgen_path,
+        save_mokapot_paths
+    ):
+
+    for p in [save_psm_path, save_fgen_path] + save_mokapot_paths:
+        if not os.path.exists(p):
+            return False
+    return True

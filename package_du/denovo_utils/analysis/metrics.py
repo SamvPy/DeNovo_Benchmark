@@ -50,7 +50,7 @@ def get_token_mass(
 def aa_match_prefix(
     peptide1: List[str],
     peptide2: List[str],
-    aa_dict: Dict[str, float],
+    aa_dict: Dict[str, float] = {},
     cum_mass_threshold: float = 0.5,
     ind_mass_threshold: float = 0.1,
 ) -> Tuple[np.ndarray, bool, Tuple[np.ndarray]]:
@@ -84,6 +84,7 @@ def aa_match_prefix(
     aa_matches = np.zeros(max(len(peptide1), len(peptide2)), np.bool_)
     aa_matches_1 = np.zeros(len(peptide1), np.bool_)
     aa_matches_2 = np.zeros(len(peptide2), np.bool_)
+    iso_errs = []
 
     # Find longest mass-matching prefix.
     i1, i2, cum_mass1, cum_mass2 = 0, 0, 0.0, 0.0
@@ -98,6 +99,11 @@ def aa_match_prefix(
             match = (
                 abs(mass_diff(aa_mass1, aa_mass2, True)) < ind_mass_threshold
             )
+            if match:
+                iso_err = get_isobaric_error(peptide1[i1], peptide2[i2])
+                if iso_err:
+                    iso_errs.append(iso_err)
+    
             aa_matches[max(i1, i2)] = match
             aa_matches_1[i1] = match
             aa_matches_2[i2] = match
@@ -109,7 +115,7 @@ def aa_match_prefix(
             i1, cum_mass1 = i1 + 1, cum_mass1 + aa_mass1
         else:
             i2, cum_mass2 = i2 + 1, cum_mass2 + aa_mass2
-    return aa_matches, aa_matches.all(), (aa_matches_1, aa_matches_2)
+    return aa_matches, aa_matches.all(), (aa_matches_1, aa_matches_2), iso_errs
 
 
 def aa_match_prefix_suffix(
@@ -148,17 +154,20 @@ def aa_match_prefix_suffix(
         TODO.
     """
     # Find longest mass-matching prefix.
-    aa_matches, pep_match, (aa_matches_1, aa_matches_2) = aa_match_prefix(
+    aa_matches, pep_match, (aa_matches_1, aa_matches_2), iso_errs = aa_match_prefix(
         peptide1, peptide2, aa_dict, cum_mass_threshold, ind_mass_threshold
     )
+
     # No need to evaluate the suffixes if the sequences already fully match.
     if pep_match:
-        return aa_matches, pep_match, (aa_matches_1, aa_matches_2)
+        return aa_matches, pep_match, (aa_matches_1, aa_matches_2), iso_errs
 
     # Find longest mass-matching suffix.
     i1, i2 = len(peptide1) - 1, len(peptide2) - 1
     i_stop = np.argwhere(~aa_matches)[0]
-    cum_mass1, cum_mass2 = 0.0, 0.0
+    cum_mass1, cum_mass2 = 0.0, 0.0 
+    iso_errs = []
+    
     while i1 >= i_stop and i2 >= i_stop:
         aa_mass1 = get_token_mass(peptide1[i1])
         aa_mass2 = get_token_mass(peptide2[i2])
@@ -170,6 +179,11 @@ def aa_match_prefix_suffix(
             match = (
                 abs(mass_diff(aa_mass1, aa_mass2, True)) < ind_mass_threshold
             )
+            if match:
+                iso_err = get_isobaric_error(peptide1[i1], peptide2[i2])
+                if iso_err:
+                    iso_errs.append(iso_err)
+            
             aa_matches[max(i1, i2)] = match
             aa_matches_1[i1] = match
             aa_matches_2[i2] = match
@@ -181,7 +195,33 @@ def aa_match_prefix_suffix(
             i1, cum_mass1 = i1 - 1, cum_mass1 + aa_mass1
         else:
             i2, cum_mass2 = i2 - 1, cum_mass2 + aa_mass2
-    return aa_matches, aa_matches.all(), (aa_matches_1, aa_matches_2)
+    return aa_matches, aa_matches.all(), (aa_matches_1, aa_matches_2), iso_errs
+
+
+def get_isobaric_error(aa1, aa2):
+    '''Isobaric error type, boolean (True if resolved)'''
+    iso_err_dict = {
+        # Deemed irresolvable except for w-ions
+        "I": "L",
+        "L": "I",
+
+        # semi-isobaric (slight diff in mass)
+        "M": "F",
+        "F": "M",
+        "K": "Q",
+        "Q": "K",
+
+        # Sample prep isobarics
+        "D": "N",
+        "N": "D",
+        "E": "Q",
+        "Q": "E",
+    }
+    for i1, i2 in iso_err_dict.items():
+        if aa1[0]==i1 and aa2[0]==i2:
+            return (i1+"/"+i2, False)
+        elif aa1[0]==i1 and aa2[0]==i1:
+            return (i1+"/"+i2, True)
 
 
 def aa_match(
@@ -230,7 +270,7 @@ def aa_match(
             peptide1, peptide2, aa_dict, cum_mass_threshold, ind_mass_threshold
         )
     elif mode == "backward":
-        aa_matches, pep_match, (aa_matches_1, aa_matches_2) = aa_match_prefix(
+        aa_matches, pep_match, (aa_matches_1, aa_matches_2), iso_errs = aa_match_prefix(
             list(reversed(peptide1)),
             list(reversed(peptide2)),
             aa_dict,
@@ -241,6 +281,7 @@ def aa_match(
             aa_matches[::-1],
             pep_match,
             (aa_matches_1[::-1], aa_matches_2[::-1]),
+            iso_errs
         )
     else:
         raise ValueError("Unknown evaluation mode")
@@ -379,3 +420,22 @@ def aa_precision_recall(
     n_aa_correct = sum([score > threshold for score in aa_scores_correct])
     n_aa_predicted = sum([score > threshold for score in aa_scores_all])
     return n_aa_correct / n_aa_predicted, n_aa_correct / n_aa_total
+
+
+def convert_peptidoform(peptidoform):
+    out = []
+    n_mod = peptidoform.properties["n_term"]
+    if n_mod is None:
+        n_mod = [None]
+
+    # If there is an N-terminal mod, this is seperately tokenized.
+    else:
+        out.append(("", n_mod))
+
+    for i, aa_mod in enumerate(peptidoform):
+        aa, mod = aa_mod
+        if mod is None:
+            mod = [mod]
+
+        out.append((aa, mod))
+    return out

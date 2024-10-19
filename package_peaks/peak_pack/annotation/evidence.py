@@ -1,4 +1,5 @@
 from psm_utils import Peptidoform
+import numpy as np
 
 class PeptideEvidence:
     def __init__(self, peptidoform, ion_matrix, evidence_labels):
@@ -9,14 +10,13 @@ class PeptideEvidence:
             self.peptidoform = peptidoform
 
         self.evidence_labels = evidence_labels
-        self.evidence = ion_matrix.any(axis=0)
-        self.ambiguous_tag_indices = self.get_ambiguous_tags()    
+        self.evidence = ion_matrix.any(axis=0) 
 
     def __repr__(self):
-
         peptide_repr = ""
-        first_tags = [i[0] for i in self.ambiguous_tag_indices]
-        end_tags = [i[1]-1 for i in self.ambiguous_tag_indices]
+        amb_tag_idx = self.get_ambiguous_tag_idx()
+        first_tags = [i[0] for i in amb_tag_idx]
+        end_tags = [i[1]-1 for i in amb_tag_idx]
 
         for i, aa in enumerate(self.peptidoform.parsed_sequence):
             mod = ""
@@ -32,7 +32,7 @@ class PeptideEvidence:
         peptide_repr += "/"+str(self.peptidoform.precursor_charge)
         return peptide_repr
     
-    def get_ambiguous_tags(self):
+    def get_ambiguous_tag_idx(self, add_nterm_index=False):
         """
         Creates a list of tuples (start_index, end_index) of amino acids which can be substituted with anything with equal mass
         """
@@ -59,4 +59,40 @@ class PeptideEvidence:
         if not prev_evidence:
             isobaric_part.append(i+1)
             isobaric_parts.append(isobaric_part)
-        return isobaric_parts
+
+        if add_nterm_index:
+            return np.array(isobaric_parts)+1
+        else:
+            return np.array(isobaric_parts)
+    
+    @property
+    def ambiguous_tags(cls):
+        tags = []
+        parsed_seq = cls.peptidoform.parsed_sequence
+
+        for tag_idx in cls.ambiguous_tag_indices:
+
+            tag = parsed_seq[tag_idx[0]:tag_idx[1]]
+
+            tag_string = ""
+            if tag_idx[0]==0:
+                n_mod = stringify_mods(cls.peptidoform.properties["n_term"])
+                if n_mod is not None:
+                    tag_string += n_mod + '-'
+
+            for aa, mod in tag:
+                tag_string += f'{aa}{stringify_mods(mod)}'
+
+            tags.append(tag_string)
+        return tags
+
+def stringify_mods(modification_list):
+
+    s = ''
+    if modification_list is None:
+        return s
+
+    for mod in modification_list:
+        mod_string = f"[{mod.prefix_name}:{mod.id}]"
+        s += mod_string
+    return s
