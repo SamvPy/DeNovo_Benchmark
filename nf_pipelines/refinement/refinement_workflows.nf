@@ -15,11 +15,12 @@ workflow spectralis_workflow {
         mgf_result_map = matchFiles(mgf_files, result_files)
         mgf_annotated = SPECTRALIS_PARSER(mgf_result_map, engine)
         SPECTRALIS_EA(mgf_annotated, engine, 'ea')
-        SPECTRALIS_RESCORING(mgf_annotated, engine, 'rescoring')
+        // The EA also reports the original scores.
+        // SPECTRALIS_RESCORING(mgf_annotated, engine, 'rescoring')
     
     emit:
         spectralis_ea = SPECTRALIS_EA.out
-        spectralis_rescoring = SPECTRALIS_RESCORING.out
+        // spectralis_rescoring = SPECTRALIS_RESCORING.out
 }
 
 workflow instanovoplus_workflow {
@@ -52,7 +53,7 @@ workflow refinement_workflow {
         }
 
     emit:
-        spectralis_ea = spectralis_workflow.out.spectralis_ea
-        spectralis_rescoring = spectralis_workflow.out.spectralis_rescoring
+        // spectralis_ea = spectralis_workflow.out.spectralis_ea
+        // spectralis_rescoring = spectralis_workflow.out.spectralis_rescoring
         instanovoplus_output = instanovoplus_workflow.out.instanovoplus_output
 }

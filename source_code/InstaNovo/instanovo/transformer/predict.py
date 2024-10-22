@@ -176,6 +176,7 @@ def main() -> None:
     parser.add_argument("--subset", default=1.0)
     parser.add_argument("--knapsack_path", default=None)
     parser.add_argument("--n_workers", default=8)
+    parser.add_argument("--device", default='cuda:0')
 
     args = parser.parse_args()
 
@@ -187,8 +188,9 @@ def main() -> None:
     denovo = args.denovo
     output_path = args.output_path
     knapsack_path = args.knapsack_path
+    device = args.device
 
-    get_preds(data_path, model, config, denovo, output_path, knapsack_path)
+    get_preds(data_path, model, config, denovo, output_path, knapsack_path, device)
 
 
 def _setup_knapsack(model: InstaNovo) -> Knapsack:

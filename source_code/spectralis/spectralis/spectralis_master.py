@@ -112,6 +112,7 @@ class Spectralis():
         -------
             bin reclassification model
         """
+        print(f"[INFO] Setting device: cuda:{num} if {torch.cuda.is_available()}")
         self.device = torch.device(f'cuda:{num}' if torch.cuda.is_available() else 'cpu')
         
         ## Number of input channels depends on selected ion types and charges
@@ -146,6 +147,7 @@ class Spectralis():
             model.load_state_dict(new_checkpoint)
             
             if str(self.device) != 'cpu':
+                print(f"[INFO] Using device {self.device}")
                 model.to(self.device)
             model.eval()   
         else:
