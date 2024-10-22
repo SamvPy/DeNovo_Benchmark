@@ -1,17 +1,14 @@
 {
     "mgf_folder": "/home/samva/Doctorate/data_directory/PXD028735/mgf/Orbitrap_QE/reformatted",
     "ground_truth_folder": "/home/samva/Doctorate/data_directory/PXD028735/search_results/identification",
-    "denovo_folder": "/home/samva/Doctorate/data_directory/PXD028735/denovo_results",
+    "denovo_folder": "/home/samva/Doctorate/data_directory/PXD028735/postprocessing",
     "path_ms2rescore_config": "/home/samva/Doctorate/DeNovo_Benchmark/configs/ms2rescore/config_default.json",
     "ground_truth_engine": "sage",
     "output_folder": "/home/samva/Doctorate/data_directory/PXD028735/rescoring_results",
     "file_type": "dir",
     "filename": null,
     "engines": [
-        "casanovo",
-        "instanovo",
-        "contranovo",
-        "pepnet",
-        "novob"
+        "spectralis",
+        "instanovoplus"
     ]
 }

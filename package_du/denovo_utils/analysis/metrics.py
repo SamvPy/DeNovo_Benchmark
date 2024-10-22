@@ -227,7 +227,7 @@ def get_isobaric_error(aa1, aa2):
 def aa_match(
     peptide1: List[str],
     peptide2: List[str],
-    aa_dict: Dict[str, float],
+    aa_dict: Dict[str, float] = {},
     cum_mass_threshold: float = 0.5,
     ind_mass_threshold: float = 0.1,
     mode: str = "best",

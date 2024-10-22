@@ -300,22 +300,32 @@ def load_configuration(
     return configuration
 
 
-def load_rescorer(rescorer, mokapot_folder, fgen_path, psm_path=None):
-    if psm_path is not None:
+def load_rescorer(rescorer: DeNovoRescorer, mokapot_folder, psm_path=None, feature_path=None):
+    if psm_path is not None and feature_path is not None:
         with open(psm_path, "rb") as f:
             psm_list = pickle.load(f)
+        features = pd.read_parquet(feature_path)
+        recs = {
+            spec_id: feature_dict for spec_id, feature_dict in zip(
+                features["spectrum_id"],
+                features.set_index("spectrum_id")[features.columns[3:]].to_dict("records")
+            )
+        }
+        _ = [psm["rescoring_features"].update(recs[psm["spectrum_id"]]) for psm in psm_list]
+            
+        # Retrain always. Model is stored in temp dir.
+        rescorer.retrain_deeplc(psm_list)
     else:
         psm_list = None
 
-    with open(fgen_path, "rb") as f:
-        fgens = pickle.load(f)
+    # with open(fgen_path, "rb") as f:
+    #     fgens = pickle.load(f)
 
     models = []
     for i in range(3):
         with open(os.path.join(mokapot_folder, f"mokapot_model_{i}.pkl"), "rb") as f:
             models.append(pickle.load(f))
 
-    rescorer.fgens = fgens
     rescorer.mokapot_models = models
     return psm_list
 
@@ -335,11 +345,11 @@ def save_object(obj, obj_path, filetype='pickle'):
 
 def already_trained(
         save_psm_path,
-        save_fgen_path,
+        save_feature_path,
         save_mokapot_paths
     ):
 
-    for p in [save_psm_path, save_fgen_path] + save_mokapot_paths:
+    for p in [save_psm_path, save_feature_path] + save_mokapot_paths:
         if not os.path.exists(p):
             return False
     return True

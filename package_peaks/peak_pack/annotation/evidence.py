@@ -2,7 +2,13 @@ from psm_utils import Peptidoform
 import numpy as np
 
 class PeptideEvidence:
-    def __init__(self, peptidoform, ion_matrix, evidence_labels):
+    def __init__(
+            self,
+            peptidoform,
+            evidence_labels,
+            ion_matrix=None,
+            evidence=None
+        ):
 
         if isinstance(peptidoform, str):
             self.peptidoform = Peptidoform(peptidoform)
@@ -10,7 +16,11 @@ class PeptideEvidence:
             self.peptidoform = peptidoform
 
         self.evidence_labels = evidence_labels
-        self.evidence = ion_matrix.any(axis=0) 
+
+        if evidence is not None:
+            self.evidence = evidence
+        else:
+            self.evidence = ion_matrix.any(axis=0) 
 
     def __repr__(self):
         peptide_repr = ""
@@ -32,6 +42,15 @@ class PeptideEvidence:
         peptide_repr += "/"+str(self.peptidoform.precursor_charge)
         return peptide_repr
     
+    @classmethod
+    def load(cls, peptide_evidence):
+        
+        return PeptideEvidence(
+            peptidoform=peptide_evidence.peptidoform,
+            evidence=peptide_evidence.evidence,
+            evidence_labels=peptide_evidence.evidence_labels
+        )
+
     def get_ambiguous_tag_idx(self, add_nterm_index=False):
         """
         Creates a list of tuples (start_index, end_index) of amino acids which can be substituted with anything with equal mass

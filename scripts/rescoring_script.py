@@ -36,14 +36,28 @@ def parse_paths(
     for mgf_path in glob(os.path.join(mgf_folder, "*.mgf")):
         ground_truth_filetype = "sage"
         filename = os.path.basename(mgf_path).split(".")[0]
-        mgf_psm_dict[filename] = {
+        
+        psm_dict = {
             "psm_file": os.path.join(ground_truth_folder, filename + EXTENSIONS[ground_truth_filetype]),
-            "spectrum_path": mgf_path,
-            "denovo": {
-                engine: os.path.join(denovo_folder, engine, filename + f".{engine}" + EXTENSIONS[engine]) for engine in engines
-            }
-
+            "spectrum_path": mgf_path
         }
+
+        denovo_dict = {}
+        for engine in engines:
+            if engine in ["instanovoplus", "spectralis"]:
+                for result_path in glob(
+                    os.path.join(denovo_folder, engine)+f"/*/{filename}*"
+                ):
+                    base_denovo_engine = os.path.basename(os.path.dirname(result_path))
+                    engine_label = f"{engine}__{base_denovo_engine}"
+                    
+                    denovo_dict[engine_label] = result_path
+            else:
+                denovo_dict[engine] = os.path.join(
+                    denovo_folder, engine, filename + f".{engine}" + EXTENSIONS[engine]
+                )
+        psm_dict["denovo"] = denovo_dict
+        mgf_psm_dict[filename] = psm_dict
     return mgf_psm_dict
 
 
@@ -58,15 +72,19 @@ def apply_pipeline(config, filename):
         spectrum_path=config["spectrum_path"]
     )
 
-    save_psm_path = "{}/{}/{}.pkl".format(
+    save_feature_path = "{}/{}/{}/{}.parquet".format(
         config["output_folder"],
         filename,
+        "features",
         config["ground_truth_engine"]
     )
-    save_fgen_path = "{}/{}/fgen.pkl".format(
+    save_psm_path = "{}/{}/{}/{}.pkl".format(
         config["output_folder"],
-        filename
+        filename,
+        "psmlist",
+        config["ground_truth_engine"]
     )
+
     mokapot_model_folder = "{}/{}/mokapot".format(
         config["output_folder"],
         filename
@@ -82,7 +100,7 @@ def apply_pipeline(config, filename):
     # If so, it is pointless to rerun this part again.
     trained = already_trained(
         save_psm_path,
-        save_fgen_path,
+        save_feature_path,
         save_mokapot_paths
     )
     if trained:
@@ -90,7 +108,7 @@ def apply_pipeline(config, filename):
         psm_list = load_rescorer(
             rescorer=rescorer,
             psm_path=save_psm_path,
-            fgen_path=save_fgen_path,
+            feature_path=save_feature_path,
             mokapot_folder=mokapot_model_folder
         )
     
@@ -115,12 +133,6 @@ def apply_pipeline(config, filename):
         # 4. Generate features for x psm_lists
         logging.info("Adding features for ground truth")
         rescorer.add_features(psm_list)
-
-        # Save
-        save_object(
-            rescorer.fgens, 
-            save_fgen_path
-        )
 
         # 5. Use the ground-truth for mokapot model training
         os.makedirs(mokapot_model_folder, exist_ok=True)
@@ -147,21 +159,44 @@ def apply_pipeline(config, filename):
     # 7. Apply the trained fgens and mokapot model on the denovo PSMS
     for engine, path in config["denovo"].items():
         # 7.1 Load the data
-        save_feature_path = "{}/{}/{}.features.parquet".format(
-            config["output_folder"],
-            filename,
-            engine
-        )
-        save_psm_path = "{}/{}/{}.psm.parquet".format(
-            config["output_folder"],
-            filename,
-            engine
-        )
+        # Add refiner token to the filename if required
+        base_denovo = "base"
+        if engine.startswith('spectralis') or engine.startswith("instanovoplus"):
+            engine, base_denovo =  engine.split("__")
+            save_feature_path = "{}/{}/{}/{}.{}.parquet".format(
+                config["output_folder"],
+                filename,
+                "features",
+                base_denovo,
+                engine
+            )
+            save_psm_path = "{}/{}/{}/{}.{}.pkl".format(
+                config["output_folder"],
+                filename,
+                "psmlist",
+                base_denovo,
+                engine
+            )
+        else:
+            save_feature_path = "{}/{}/{}/{}.parquet".format(
+                config["output_folder"],
+                filename,
+                "features",
+                engine
+            )
+            save_psm_path = "{}/{}/{}/{}.pkl".format(
+                config["output_folder"],
+                filename,
+                "psmlist",
+                engine
+            )
+
         if os.path.exists(save_psm_path):
-            logging.info(f"Skipping {filename}:{engine} rescoring. {save_psm_path} exists.")
+            logging.info(f"Skipping {filename}:{engine}-{base_denovo} rescoring. {save_psm_path} exists.")
             continue
 
-        logging.info(f"{engine} for {filename}")
+        
+        logging.info(f"{engine}-{base_denovo} for {filename}")
         parser = DenovoEngineConverter.select(engine)
         psm_list = parser.parse(
             result_path=path,
@@ -185,7 +220,7 @@ def apply_pipeline(config, filename):
         save_object(
             psm_list,
             save_psm_path,
-            'parquet'
+            'pickle'
         )
 
 def complete_config(config, args):

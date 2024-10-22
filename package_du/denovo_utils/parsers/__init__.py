@@ -5,7 +5,7 @@ from .constants import (
     MODIFICATION_MAPPING,
     MODIFICATION_MAPPING_TO_SPECTRALIS,
 )
-from .converters import DenovoEngineConverter, SpectralisParser
+from .converters import DenovoEngineConverter
 from .exceptions import (
     DenovoEngineNotSupported,
     NoResultsToMergeException,
@@ -22,6 +22,5 @@ __all__ = [
     "SeparatorCharacterInTitle",
     "proforma_to_oms",
     "proforma_to_theoretical_spectrum",
-    "SpectralisParser",
     "DenovoEngineConverter",
 ]

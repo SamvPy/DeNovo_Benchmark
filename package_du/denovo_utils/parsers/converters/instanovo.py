@@ -81,3 +81,49 @@ def instanovo_parser(
         ).tolist()
     )
     return psmlist
+
+def instanovoplus_parser(
+    result_path: str, mgf_path: str, mapping: dict, max_length=30, **kwargs
+):
+    result_path = os.path.splitext(result_path)[0] + ".csv"
+
+    # ASSUMPTION:
+    # The output of Instanovo has the same length and order
+    # (in terms of spectra) as the mgf-file
+    mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+    result = pd.read_csv(result_path)
+    run = os.path.basename(result_path)
+
+    # Fuse the metadata of the spectra with result file
+    result["title"] = result["spectrum_id"].apply(lambda x: x.split("||")[0])
+    result["source"] = result["spectrum_id"].apply(lambda x: x.split("||")[1])
+    joined_file = result.merge(mgf_file, on="title")
+
+    # Sanity check
+    assert len(joined_file) == len(result)
+
+    joined_file["peptidoform"] = joined_file.apply(
+        lambda x: str(x["predictions"]) + "/" + str(int((x["charge"][0]))), axis=1
+    )
+    joined_file["precursor_mz"] = joined_file["pepmass"].apply(lambda x: x[0])
+    joined_file["peptidoform"] = joined_file["peptidoform"].apply(
+        lambda x: parse_peptidoform(x, mapping, max_length)
+    )
+    joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
+
+    psmlist = PSMList(
+        psm_list=joined_file.progress_apply(
+            lambda x: PSM(
+                peptidoform=x["peptidoform"],
+                spectrum_id=x["title"],
+                run=run,
+                score=x["log_probabilities"],
+                precursor_mz=x["precursor_mz"],
+                retention_time=x["rtinseconds"],
+                source="InstaNovo+",
+                metadata={"base_prediction": x["source"]},
+            ),
+            axis=1,
+        ).tolist()
+    )
+    return psmlist

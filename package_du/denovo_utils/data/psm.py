@@ -22,7 +22,20 @@ class PSM:
 
     def __eq__(self, psm: 'PSM'):
         """Exact string matching of peptidoform."""
-        return self.peptidoform.proforma == self.psm.proforma
+        return self.peptidoform.proforma == psm.peptidoform.proforma
+    
+    def __repr__(self):
+        return str(self.to_dict())
+
+    def to_dict(self):
+        return {
+            'peptidoform': self.peptidoform,
+            'scores': self.scores,
+            'engine_name': self.engine_name,
+            'peptide_evidence': self.peptide_evidence,
+            'refinement': self.refinement,
+            'evaluation': self.evaluation
+        }
 
     def add_peptide_evidence(self, peptide_evidence):
         self.peptide_evidence = peptide_evidence
@@ -52,9 +65,12 @@ class PSM:
 
 class Score:
     def __init__(self, score=None, metadata=None, score_type='peptide'):
-        self.score_dict = {}
+        self.score_dict = {'peptide': {}, 'aa': {}}
         if score is not None and metadata is not None:
             self.add_score(score, metadata, score_type)
+        
+    def __repr__(self):
+        return str(self.score_dict)
     
     def add_score(self, score, metadata, score_type, overwrite=False):
         if score is None:
@@ -93,16 +109,29 @@ class Evaluation:
         self.aa_match = None
         self.score_diff = None
 
+    def __repr__(self):
+        return str((self.error_type, self.score_diff))
+
+    def to_dict(self):
+        return {
+            "error_type": self.error_type,
+            "isobaric_aa_errors": self.isobaric_aa_errors,
+            "isobaric_tag_errors": self.isobaric_tag_errors,
+            "aa_match": self.aa_match,
+            "score_diff": self.score_diff
+        }
+
     def evaluate(self, psm_1, psm_2, score_1, score_2):
         skip_isobars = True
-        self.score_diff = score_2 - score_1
+        self.score_diff = round(score_2 - score_1, 3)
 
         if psm_1.peptidoform == psm_2.peptidoform:
             self.error_type = 'match'
 
         _, pep_match, (match_1, match_2), iso_errs = aa_match(
             convert_peptidoform(psm_1.peptidoform),
-            convert_peptidoform(psm_2.peptidoform)
+            convert_peptidoform(psm_2.peptidoform),
+            aa_dict={}
         )
         self.isobaric_aa_errors = iso_errs
 
@@ -110,12 +139,12 @@ class Evaluation:
             self.error_type = 'isobaric_aa'
             return
 
+        pe_1 = psm_1.peptide_evidence
+        pe_2 = psm_2.peptide_evidence
         if pe_1 is None:
-            pe_1 = psm_1['metadata']['peptide_evidence']
             skip_isobars = False
 
         if pe_2 is None:
-            pe_2 = psm_2['metadata']['peptide_evidence']
             skip_isobars = False
 
         if not skip_isobars:

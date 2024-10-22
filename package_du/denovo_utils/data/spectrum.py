@@ -7,6 +7,20 @@ class Spectrum:
         self.psm_gt: Optional[PSM] = None
         self.psm_candidates: Optional[List[PSM]] = []  # List to hold multiple PSMs associated with this spectrum
 
+    def __repr__(self):
+        str_repr = "Spectrum ID: {}\nGround-truth: {} ({})".format(
+            self.spectrum_id,
+            self.psm_gt.peptide_evidence,
+            self.psm_gt.scores
+        )
+        str_repr += "\nCandidates:"
+        for psm_candidate in self.psm_candidates:
+            str_repr += "\n\t{} ({})".format(
+                psm_candidate.peptide_evidence,
+                psm_candidate.scores
+            )
+        return str_repr
+
     def add_psm(self, psm: PSM, is_ground_truth=False):
         if is_ground_truth:
             self.psm_gt = psm
@@ -27,3 +41,8 @@ class Spectrum:
                 metadata_score=metadata_score,
                 refinement=refinement,
             )
+
+    @property
+    def engines(self):
+
+        return set([psm.engine_name for psm in self.psm_candidates] + [self.psm_gt.engine_name]) 

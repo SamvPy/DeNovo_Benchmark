@@ -68,7 +68,7 @@ def pepnet_parser(
                 retention_time=x["rtinseconds"],
                 source="PepNet",
                 metadata={
-                    "positional_scores": x["Positional Score"],
+                    "aa_scores": x["Positional Score"],
                     "ppm_error": x["PPM Difference"],
                 },
             ),

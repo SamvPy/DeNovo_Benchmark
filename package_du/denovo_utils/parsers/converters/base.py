@@ -10,12 +10,13 @@ from ..exceptions import DenovoEngineNotSupported
 from .casanovo import casanovo_parser
 from .contranovo import contranovo_parser
 from .external import psmutils_parser
-from .instanovo import instanovo_parser
+from .instanovo import instanovo_parser, instanovoplus_parser
 from .novob import novob_parser
 from .novor import novor_parser
 from .pepnet import pepnet_parser
 from .pepnovo import pepnovo_parser
 from .pointnovo import pointnovo_parser
+from .spectralis import spectralis_parser
 
 # Define supported parsers for de novo search engines as
 # an Enum with associated parser functions
@@ -40,12 +41,14 @@ class DenovoEngineConverter(Enum):
 
     CASANOVO = ("casanovo", casanovo_parser)
     INSTANOVO = ("instanovo", instanovo_parser)
+    INSTANOVOPLUS = ("instanovoplus", instanovoplus_parser)
     CONTRANOVO = ("contranovo", contranovo_parser)
     NOVOB = ("novob", novob_parser)
     PEPNET = ("pepnet", pepnet_parser)
     NOVOR = ("novor", novor_parser)
     PEPNOVO = ("pepnovo", pepnovo_parser)
     POINTNOVO = ("pointnovo", pointnovo_parser)
+    SPECTRALIS = ("spectralis", spectralis_parser)
     PMSUTILS = ("psm-utils", psmutils_parser)
 
     def __init__(self, label: str, parser_func: callable) -> None:
