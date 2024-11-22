@@ -89,7 +89,7 @@ class PeptideEvidence:
         tags = []
         parsed_seq = cls.peptidoform.parsed_sequence
 
-        for tag_idx in cls.ambiguous_tag_indices:
+        for tag_idx in cls.get_ambiguous_tag_idx():
 
             tag = parsed_seq[tag_idx[0]:tag_idx[1]]
 

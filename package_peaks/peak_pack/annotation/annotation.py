@@ -29,7 +29,7 @@ class SpectrumVector():
 
     def parse(self, psm, spectrum):
 
-        annot_spec, theo_frags = get_annotated_spectrum(psm, spectrum)
+        self.annot_spec, theo_frags = get_annotated_spectrum(psm, spectrum)
         self.tic = np.sum(spectrum["intensity array"])
         self.peptidoform = psm.peptidoform
         self.spectrum_id = psm.spectrum_id
@@ -37,7 +37,7 @@ class SpectrumVector():
         self.precursor_ppm = calculate_ppm(m1=self.precursor_mz, m2=psm.precursor_mz)
 
         # Convert the list of fragments to a polars object
-        annot_frags, mz_array, intensity_array = annot_peaks_to_fragments(annot_spec.spectrum)
+        annot_frags, mz_array, intensity_array = annot_peaks_to_fragments(self.annot_spec.spectrum)
         spec_polars_theo = fragments_to_polars(
             fragment_list=theo_frags,
             ion_types=self.ion_types,
