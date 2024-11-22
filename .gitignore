@@ -9,3 +9,10 @@
 **/NovoB.egg-info/**
 **/PepNet.egg-info/**
 **/spectralis.egg-info/**
+**/*.pkl
+**/*.ipynb
+**/*.
+package_peaks/peak_pack.egg-info/**
+notebooks/**
+**/*.html
+**/*.png

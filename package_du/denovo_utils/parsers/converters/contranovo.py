@@ -10,6 +10,7 @@ from pyteomics.mztab import MzTab
 from tqdm import tqdm
 
 from ...utils.proforma import parse_peptidoform
+from .utils import mzml_reader
 
 tqdm.pandas()
 
@@ -42,7 +43,11 @@ def contranovo_parser(
     """
     result_path = os.path.splitext(result_path)[0] + ".mztab"
 
-    mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+    if mgf_path.lower().endswith('.mzml'):
+        mgf_file = mzml_reader(mgf_path)
+    else:
+        mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+
     _ = mgf_file.pop("charge")
 
     try:

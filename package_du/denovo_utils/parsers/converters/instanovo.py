@@ -8,6 +8,7 @@ from pyteomics import mgf
 from tqdm import tqdm
 
 from ...utils.proforma import parse_peptidoform
+from .utils import mzml_reader
 
 tqdm.pandas()
 
@@ -40,7 +41,11 @@ def instanovo_parser(
     # ASSUMPTION:
     # The output of Instanovo has the same length and order
     # (in terms of spectra) as the mgf-file
-    mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+    if mgf_path.lower().endswith('.mzml'):
+        mgf_file = mzml_reader(mgf_path)
+    else:
+        mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+
     result = pd.read_csv(result_path)
     run = os.path.basename(result_path)
 
@@ -90,7 +95,11 @@ def instanovoplus_parser(
     # ASSUMPTION:
     # The output of Instanovo has the same length and order
     # (in terms of spectra) as the mgf-file
-    mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+    if mgf_path.lower().endswith('.mzml'):
+        mgf_file = mzml_reader(mgf_path)
+    else:
+        mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+
     result = pd.read_csv(result_path)
     run = os.path.basename(result_path)
 

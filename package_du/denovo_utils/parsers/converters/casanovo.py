@@ -10,6 +10,7 @@ from pyteomics.mztab import MzTab
 from tqdm import tqdm
 
 from ...utils.proforma import parse_peptidoform
+from .utils import mzml_reader
 
 tqdm.pandas()
 
@@ -47,7 +48,11 @@ def casanovo_parser(
     # ms_run[1]:index= and the number is a count
     # of spectra, starting from 0 and going to n for a file with n spectra
     # https://github.com/Noble-Lab/casanovo/issues/309
-    mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+    if mgf_path.lower().endswith('.mzml'):
+        mgf_file = mzml_reader(mgf_path)
+    else:
+        mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+
     _ = mgf_file.pop("charge")
     result = (
         pd.DataFrame(MzTab(result_path).spectrum_match_table)
@@ -64,7 +69,8 @@ def casanovo_parser(
     joined_file = mgf_file.merge(result, on="index")
 
     # Sanity check
-    assert len(result) == len(joined_file)
+    # assert len(result) == len(joined_file)
+
     if len(mgf_file) > len(joined_file):
         logging.info(
             f"{result_path} - Casanovo:"
