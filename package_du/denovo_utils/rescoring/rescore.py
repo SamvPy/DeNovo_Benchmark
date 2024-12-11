@@ -9,7 +9,9 @@ import logging
 from multiprocessing import cpu_count
 from typing import Dict, Optional
 import copy
+from glob import glob
 
+import shutil
 import os
 import numpy as np
 import psm_utils.io
@@ -18,6 +20,9 @@ from psm_utils import PSMList
 import pandas as pd
 import pickle
 from psm_utils.io.parquet import ParquetWriter
+from ..parsers import EXTENSIONS
+
+from tensorflow.keras.models import load_model
 
 from ms2rescore import parse_configurations
 from ms2rescore import exceptions
@@ -92,11 +97,70 @@ class DeNovoRescorer:
             psm_list = psm_list[mask]
         return psm_list
 
-    def retrain_deeplc(self, psm_list):
+    def retrain_deeplc(self, psm_list, load_from_cache=False, save_model_folder=""):
+        calibration_path = os.path.join(save_model_folder, "calibration.pkl")
+
+        if load_from_cache:
+            logging.info("Loading deeplc from cache")
+            model_paths = []
+            for p in glob(os.path.join(save_model_folder, "*.keras")):
+                model_paths.append(p)
+            
+            with open(calibration_path, "rb") as f:
+                calibration_params = pickle.load(f)
+            
+            deeplc_kwargs = {"path_model": model_paths}
+            deeplc_kwargs.update(calibration_params)
+            self.fgens.feature_generators["deeplc"] = FEATURE_GENERATORS["deeplc"](**deeplc_kwargs)
+
+            self.fgens.feature_generators['deeplc'].deeplc_predictor.calibrate_dict = deeplc_kwargs['calibrate_dict']
+            self.fgens.feature_generators['deeplc'].deeplc_predictor.calibrate_min = deeplc_kwargs['calibrate_min']
+            self.fgens.feature_generators['deeplc'].deeplc_predictor.calibrate_max = deeplc_kwargs['calibrate_max']
+
+            logging.info(f"Loaded DeepLC models: {self.fgens.feature_generators['deeplc'].deeplc_predictor.model}")
+            logging.info(f"Loaded calibration sets at {calibration_path}")
+            return
+
         # The model is saved in a temp folder so should edit here to save the deeplc model directly.
         self.fgens.feature_generators["deeplc"].retrain_deeplc(psm_list)
+        
+        # Save the deeplc model checkpoint
+        deeplc_fgen = self.fgens.feature_generators["deeplc"]
+        
+        for m in deeplc_fgen.selected_model:
+            new_model_path = os.path.join(save_model_folder, os.path.basename(m))
+            
+            loaded_model = load_model(m)
+            loaded_model.save(new_model_path)
 
-    def add_features(self, psm_list):
+            # Delete the temporary directory (Hopes to prevent broken pipes)
+            shutil.rmtree(os.path.dirname(m))  # Manually remove a temporary folder
+            logging.info(f"Saved DeepLC model to {new_model_path}")
+
+        calibration_params = {
+            "calibrate_dict": {new_model_path: deeplc_fgen.deeplc_predictor.calibrate_dict[m]},
+            "calibrate_min": {new_model_path: deeplc_fgen.deeplc_predictor.calibrate_min[m]},
+            "calibrate_max": {new_model_path: deeplc_fgen.deeplc_predictor.calibrate_max[m]}
+        }
+        with open(calibration_path, "wb") as f:
+            pickle.dump(calibration_params, f)
+        logging.info(f"Saved DeepLC calibration to {calibration_path}")
+
+        # Reinitialize the deeplc model to not use the temporary directory in the hopes to prevent broken pipe errors
+        self.retrain_deeplc(
+            psm_list, load_from_cache=True, save_model_folder=save_model_folder
+        )
+            
+
+    def get_im2deep_calibration_df(self, calibration_df=None, load_from_cache=False, save_model_folder=""):
+        # TODO: Should only write or return a calibration df, not create it. To create, use static method in feature generator
+
+
+    def add_features(self, psm_list, feature_types=[]):
+        # Default feature types to all feature generators in the fgen object
+        if feature_types == []:
+            feature_types = list(self.fgens.feature_generators.keys())
+
         if self.fgens.feature_generators["deeplc"].deeplc_predictor is None:
             raise Exception("First retrain deeplc!")
             
@@ -123,6 +187,10 @@ class DeNovoRescorer:
                     "this feature generator."
                 )
                 continue
+            if fgen_name not in feature_types:
+                logging.info(f"Skipping feature generators of type {fgen_name}")
+                continue
+
             logger.info(f"Generating {fgen_name} features")
 
             fgen = self.fgens.feature_generators[fgen_name]
@@ -300,32 +368,51 @@ def load_configuration(
     return configuration
 
 
-def load_rescorer(rescorer: DeNovoRescorer, mokapot_folder, psm_path=None, feature_path=None):
-    if psm_path is not None and feature_path is not None:
-        with open(psm_path, "rb") as f:
-            psm_list = pickle.load(f)
-        features = pd.read_parquet(feature_path)
-        recs = {
-            spec_id: feature_dict for spec_id, feature_dict in zip(
-                features["spectrum_id"],
-                features.set_index("spectrum_id")[features.columns[3:]].to_dict("records")
-            )
-        }
-        _ = [psm["rescoring_features"].update(recs[psm["spectrum_id"]]) for psm in psm_list]
+def load_psm_features(psm_path=None, feature_path=None):
+
+    with open(psm_path, "rb") as f:
+        psm_list = pickle.load(f)
+    features = pd.read_parquet(feature_path)
+    if "rescoring_features" in features.columns:
+        features = pd.concat(
+            [
+                features[features.columns[:3]].reset_index(drop=True),
+                pd.DataFrame(features['rescoring_features'].tolist())
+            ],
+            axis=1
+        )
+
+    recs = {
+        spec_id: feature_dict for spec_id, feature_dict in zip(
+            features["spectrum_id"],
+            features.set_index("spectrum_id")[features.columns[3:]].to_dict("records")
+        )
+    }
+
+    # Beware of pythons object reference system
+    psm_list['rescoring_features'] = [{} for i, _ in enumerate(psm_list)]
+    _ = [psm["rescoring_features"].update(recs[psm["spectrum_id"]]) for psm in psm_list]
             
-        # Retrain always. Model is stored in temp dir.
-        rescorer.retrain_deeplc(psm_list)
-    else:
-        psm_list = None
+    return psm_list
 
-    # with open(fgen_path, "rb") as f:
-    #     fgens = pickle.load(f)
-
+def load_mokapot(mokapot_folder):
     models = []
     for i in range(3):
         with open(os.path.join(mokapot_folder, f"mokapot_model_{i}.pkl"), "rb") as f:
             models.append(pickle.load(f))
+    return models
 
+def load_rescorer(rescorer: DeNovoRescorer, mokapot_folder, load_deeplc_from_cache=False, psm_path=None, feature_path=None):
+    if psm_path is not None and feature_path is not None:
+        psm_list = load_psm_features(psm_path=psm_path, feature_path=feature_path)
+            
+        # Retrain if use_deeplc_model_path is set to None. Store model in save_deeplc_path (folder)
+        rescorer.retrain_deeplc(psm_list, load_from_cache=load_deeplc_from_cache, save_model_folder=mokapot_folder)
+
+    else:
+        psm_list = None
+
+    models = load_mokapot(mokapot_folder)
     rescorer.mokapot_models = models
     return psm_list
 
@@ -353,3 +440,51 @@ def already_trained(
         if not os.path.exists(p):
             return False
     return True
+
+def parse_config_paths(
+        ground_truth_folder,
+        mgf_folder,
+        denovo_folder,
+        postprocessing_folder,
+        engines,
+        post_processors=["instanovoplus", "spectralis"],
+        *args,
+        **kwargs
+):
+    
+    mgf_psm_dict = {}
+    for mgf_path in glob(os.path.join(mgf_folder, "*.mgf")):
+        ground_truth_filetype = "sage"
+        filename = os.path.basename(mgf_path).split(".")[0]
+        psm_file_path = os.path.join(ground_truth_folder, filename + EXTENSIONS[ground_truth_filetype])
+        
+        if not os.path.exists(mgf_path) or not os.path.exists(psm_file_path):
+            continue
+
+        psm_dict = {
+            "psm_file": psm_file_path,
+            "spectrum_path": mgf_path
+        }
+
+        denovo_dict = {}
+        for engine in engines:
+            for post_processor in post_processors:
+                for result_path in glob(
+                    os.path.join(postprocessing_folder, post_processor)+f"/{engine}/{filename}*"
+                ):
+                    engine_label = f"{post_processor}__{engine}"
+                    denovo_dict[engine_label] = result_path
+            else:
+                denovo_path = os.path.join(
+                    denovo_folder, engine, filename + f".{engine}" + EXTENSIONS[engine]
+                )
+                if os.path.exists(denovo_path):
+                    denovo_dict[engine] = os.path.join(
+                        denovo_folder, engine, filename + f".{engine}" + EXTENSIONS[engine]
+                    )
+
+        if denovo_dict == {}:
+            continue
+        psm_dict["denovo"] = denovo_dict
+        mgf_psm_dict[filename] = psm_dict
+    return mgf_psm_dict

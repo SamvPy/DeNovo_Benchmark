@@ -44,12 +44,18 @@ class PeptideEvidence:
     
     @classmethod
     def load(cls, peptide_evidence):
+        if peptide_evidence is None:
+            return None
         
-        return PeptideEvidence(
-            peptidoform=peptide_evidence.peptidoform,
-            evidence=peptide_evidence.evidence,
-            evidence_labels=peptide_evidence.evidence_labels
-        )
+        try:
+            return PeptideEvidence(
+                peptidoform=peptide_evidence.peptidoform,
+                evidence=peptide_evidence.evidence,
+                evidence_labels=peptide_evidence.evidence_labels
+            )
+        except AttributeError as e:
+            print('Incompatible peptide_evidence object loaded.')
+            raise Exception(e)
 
     def get_ambiguous_tag_idx(self, add_nterm_index=False):
         """

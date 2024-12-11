@@ -2,8 +2,9 @@ from typing import List, Optional, Union
 from .psm import PSM
 
 class Spectrum:
-    def __init__(self, spectrum_id):
+    def __init__(self, spectrum_id, **properties):
         self.spectrum_id = spectrum_id
+        self.properties = properties
         self.psm_gt: Optional[PSM] = None
         self.psm_candidates: Optional[List[PSM]] = []  # List to hold multiple PSMs associated with this spectrum
 
@@ -30,7 +31,7 @@ class Spectrum:
     def get_psms_by_engine(self, engine_name):
         return [psm for psm in self.psm_candidates if psm.engine_name == engine_name]
     
-    def compare_gt(self, metadata_score, refinement=None):
+    def compare_gt(self, metadata_score, refinements=None):
 
         if self.psm_gt is None:
             return
@@ -39,7 +40,7 @@ class Spectrum:
             psm.compare(
                 psm_gt=self.psm_gt,
                 metadata_score=metadata_score,
-                refinement=refinement,
+                refinements=refinements,
             )
 
     @property
