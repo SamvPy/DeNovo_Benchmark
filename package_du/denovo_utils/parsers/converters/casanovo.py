@@ -50,6 +50,9 @@ def casanovo_parser(
     # https://github.com/Noble-Lab/casanovo/issues/309
     if mgf_path.lower().endswith('.mzml'):
         mgf_file = mzml_reader(mgf_path)
+        # In mzml format, the indexation with spectra_ref is done with the id (title) part
+        mgf_file['index'] = mgf_file['title'].apply(lambda x: int(x.split('scan=')[-1]))
+        mgf_file = mgf_file.set_index('index')
     else:
         mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
 
@@ -63,6 +66,8 @@ def casanovo_parser(
     run = os.path.basename(result_path)
 
     mgf_file = mgf_file.reset_index()
+
+    # This is count-based in MGF, but equals 'scan=xxx' in mzml format id-section (See parsers in depthcharge)
     result["index"] = result.spectra_ref.apply(lambda x: int(x.split("=")[-1]))
 
     # Fuse the metadata of the spectra with result file
