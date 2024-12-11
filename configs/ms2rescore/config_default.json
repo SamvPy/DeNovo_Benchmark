@@ -39,7 +39,8 @@
                 "neutral_losses_evidence": ["", "-H2O1"],
                 "fragment_tol_mass": 20,
                 "fragment_tol_mode": "ppm"
-            }
+            },
+            "im2deep": {}
         },
         "rescoring_engine": {
             "mokapot": {
@@ -86,10 +87,6 @@
             "explained_b_pct",
             "explained_all_pct",
             "charge_n",
-            "charge_2",
-            "charge_3",
-            "charge_4",
-            "charge_5",
             "spec_pearson",
             "spec_spearman",
             "cos",
@@ -98,10 +95,7 @@
             "iony_spearman",
             "observed_retention_time",
             "predicted_retention_time",
-            "rt_diff",
-            "observed_retention_time_best",
-            "predicted_retention_time_best",
-            "rt_diff_best"
+            "rt_diff"
         ]
     }
 }

@@ -50,9 +50,10 @@ def plot_spectrum(
     mgf_path: str,
     spectrum_id: str,
     peptide: str,
-    fragment_tol_mass: float = 50.0,
+    fragment_tol_mass: float = 20,
     fragment_tol_mode: Literal["ppm", "Da"] = "ppm",
     ion_types: str = "by",
+    max_ion_charge: int = 2,
     plot: bool = True,
 ) -> sus.MsmsSpectrum:
     """
@@ -94,6 +95,7 @@ def plot_spectrum(
         fragment_tol_mass=fragment_tol_mass,
         fragment_tol_mode=fragment_tol_mode,
         ion_types=ion_types,
+        max_ion_charge=max_ion_charge
     )
 
     if plot:

@@ -1,0 +1,5 @@
+{
+    "M[UNIMOD:Oxidation]": "M[UNIMOD:35]",
+    "[UNIMOD:Acetylation]-": "[UNIMOD:1]-",
+    "Q[UNIMOD:Gln->pyro-Glu]": "[UNIMOD:385]-"
+}

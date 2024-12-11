@@ -1,8 +1,8 @@
 #!/usr/bin/env nextflow
 
-def matchFiles(mgf_files, result_files) {
+def matchFiles(peak_files, result_files) {
 
-    mgf_map = mgf_files
+    mgf_map = peak_files
         .map { file -> 
         tuple (file.baseName, file)    
     }
@@ -22,9 +22,9 @@ def matchFiles(mgf_files, result_files) {
         }
         .map { it ->
             def (baseName, files) = it
-            def mgf_file = files.find { it.name.endsWith(".mgf")}
-            def result_file = files.find { !it.name.endsWith(".mgf")}
-            return [mgf_file, result_file]
+            def peak_file = files.find { it.name.endsWith(".${params.raw_extension}")}
+            def result_file = files.find { !it.name.endsWith(".${params.raw_extension}")}
+            return [peak_file, result_file]
         }
     return mgf_result_map
 }

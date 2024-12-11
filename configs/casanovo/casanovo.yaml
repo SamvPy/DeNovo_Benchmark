@@ -20,7 +20,7 @@ predict_batch_size: 64
 # Number of beams used in beam search
 n_beams: 5
 # Number of PSMs for each spectrum
-top_match: 1
+top_match: 5
 # The hardware accelerator to use. Must be one of:
 # "cpu", "gpu", "tpu", "ipu", "hpu", "mps", or "auto"
 accelerator: "auto"
@@ -53,7 +53,7 @@ val_check_interval: 50_000
 
 # SPECTRUM PROCESSING OPTIONS
 # Number of the most intense peaks to retain, any remaining peaks are discarded
-n_peaks: 200
+n_peaks: 150
 # Min peak m/z allowed, peaks with smaller m/z are discarded
 min_mz: 50.0
 # Max peak m/z allowed, peaks with larger m/z are discarded
