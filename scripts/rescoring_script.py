@@ -8,9 +8,13 @@ from denovo_utils.rescoring.rescore import (
     load_configuration,
     load_rescorer,
     save_object,
-    already_trained
+    already_trained,
+    parse_config_paths,
+    load_psm_features,
+    load_mokapot
 )
 import pickle
+import gc
 
 from ms2rescore import parse_configurations
 import copy
@@ -23,45 +27,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def parse_paths(
-        ground_truth_folder,
-        mgf_folder,
-        denovo_folder,
-        engines,
-        *args,
-        **kwargs
-):
-    
-    mgf_psm_dict = {}
-    for mgf_path in glob(os.path.join(mgf_folder, "*.mgf")):
-        ground_truth_filetype = "sage"
-        filename = os.path.basename(mgf_path).split(".")[0]
-        
-        psm_dict = {
-            "psm_file": os.path.join(ground_truth_folder, filename + EXTENSIONS[ground_truth_filetype]),
-            "spectrum_path": mgf_path
-        }
-
-        denovo_dict = {}
-        for engine in engines:
-            if engine in ["instanovoplus", "spectralis"]:
-                for result_path in glob(
-                    os.path.join(denovo_folder, engine)+f"/*/{filename}*"
-                ):
-                    base_denovo_engine = os.path.basename(os.path.dirname(result_path))
-                    engine_label = f"{engine}__{base_denovo_engine}"
-                    
-                    denovo_dict[engine_label] = result_path
-            else:
-                denovo_dict[engine] = os.path.join(
-                    denovo_folder, engine, filename + f".{engine}" + EXTENSIONS[engine]
-                )
-        psm_dict["denovo"] = denovo_dict
-        mgf_psm_dict[filename] = psm_dict
-    return mgf_psm_dict
-
-
-def apply_pipeline(config, filename):
+def apply_pipeline(config, filename, args=None):
 
     logging.info(f"Process for {filename} started.")
     # Load and initialize the configurations
@@ -104,13 +70,34 @@ def apply_pipeline(config, filename):
         save_mokapot_paths
     )
     if trained:
-        logging.info(f"Loading the mokapot models for {filename} from {mokapot_model_folder}")
+        logging.info(f"Found result paths for {filename} ground truth")
         psm_list = load_rescorer(
             rescorer=rescorer,
             psm_path=save_psm_path,
+            load_deeplc_from_cache="deeplc" not in args["regenerate"],
             feature_path=save_feature_path,
             mokapot_folder=mokapot_model_folder
         )
+
+        if len(args["regenerate"]) > 0:
+            logging.info(f"Regenerating {args['regenerate']} features.")
+            rescorer.add_features(psm_list=psm_list, feature_types=args['regenerate'])
+
+
+        if args['retrain_mokapot']:
+            logging.info("Training mokapot models")
+            logging.info(f"Retrain mokapot and rescore ground-truth. {len(psm_list)} psms")
+            rescorer.train_mokapot_models(psm_list, save_folder=mokapot_model_folder)
+            rescorer.rescore(psm_list)
+            psm_features = psm_list.to_dataframe()[["spectrum_id", "run", "source", "rescoring_features"]]
+            psm_features.to_parquet(save_feature_path)
+            psm_list["rescoring_features"] = [{} for i, _ in enumerate(psm_list)]
+            
+            save_object(
+                psm_list,
+                save_psm_path,
+                'pickle'
+            )
     
     else:
         # 1. Load the ground-truth dataset
@@ -136,6 +123,8 @@ def apply_pipeline(config, filename):
 
         # 5. Use the ground-truth for mokapot model training
         os.makedirs(mokapot_model_folder, exist_ok=True)
+        os.makedirs(os.path.dirname(save_feature_path), exist_ok=True)
+        os.makedirs(os.path.basename(save_psm_path), exist_ok=True)
         logging.info("Training mokapot models")
         rescorer.train_mokapot_models(
             psm_list,
@@ -148,12 +137,12 @@ def apply_pipeline(config, filename):
 
         psm_features = psm_list.to_dataframe()[["spectrum_id", "run", "source", "rescoring_features"]]
         psm_features.to_parquet(save_feature_path)
-        psm_list["rescoring_features"] = [{}]*len(psm_list)
+        psm_list["rescoring_features"] = [{} for i, _ in enumerate(psm_list)]
         
         save_object(
             psm_list,
             save_psm_path,
-            'parquet'
+            'pickle'
         )
 
     # 7. Apply the trained fgens and mokapot model on the denovo PSMS
@@ -191,22 +180,34 @@ def apply_pipeline(config, filename):
                 engine
             )
 
-        if os.path.exists(save_psm_path):
-            logging.info(f"Skipping {filename}:{engine}-{base_denovo} rescoring. {save_psm_path} exists.")
-            continue
-
-        
+        # Load the data depending on how its specified in the config
+        # This is more for dev purposes when feature generators are added/changed or when rescoring should be redone
         logging.info(f"{engine}-{base_denovo} for {filename}")
-        parser = DenovoEngineConverter.select(engine)
-        psm_list = parser.parse(
-            result_path=path,
-            mgf_path=config["spectrum_path"]
-        )
-        
-        # 7.2 Preprocess denovo dataset
-        logging.info(f"Adding features for {engine}:{filename}")
-        psm_list = rescorer.preprocess_psm_list(psm_list, denovo=True)
-        rescorer.add_features(psm_list)
+        if os.path.exists(save_psm_path) and os.path.exists(save_feature_path):
+            
+            if len(args["regenerate"]) > 0:
+                logging.info(f"Regenerating {args['regenerate']} features.")
+                psm_list = load_psm_features(psm_path=save_psm_path, feature_path=save_feature_path)
+                rescorer.add_features(psm_list=psm_list, feature_types=args['regenerate'])
+            elif not args['retrain_mokapot']:
+                logging.info(f"Skipping {filename}:{engine}-{base_denovo} rescoring. {save_psm_path} exists.")
+                continue
+            else:
+                psm_list = load_psm_features(psm_path=save_psm_path, feature_path=save_feature_path)
+            logging.info(f"Loaded {filename} from {os.path.dirname(save_psm_path)}")
+
+        else:
+            logging.info(f"Loading {filename} from raw search results.")
+            parser = DenovoEngineConverter.select(engine)
+            psm_list = parser.parse(
+                result_path=path,
+                mgf_path=config["spectrum_path"]
+            )
+            
+            # 7.2 Preprocess denovo dataset
+            logging.info(f"Adding features for {engine}:{filename}")
+            psm_list = rescorer.preprocess_psm_list(psm_list, denovo=True)
+            rescorer.add_features(psm_list)
 
         # 7.3 Rescore de novo sequences
         logging.info(f"Rescoring for {engine}:{filename}. {len(psm_list)} psms")
@@ -215,13 +216,14 @@ def apply_pipeline(config, filename):
         # 7.4 Split and save the PSMList in two distinct parts
         psm_features = psm_list.to_dataframe()[["spectrum_id", "run", "source", "rescoring_features"]]
         psm_features.to_parquet(save_feature_path)
-        psm_list["rescoring_features"] = [{}]*len(psm_list)
+        psm_list["rescoring_features"] = [{} for i, _ in enumerate(psm_list)]
 
         save_object(
             psm_list,
             save_psm_path,
             'pickle'
         )
+        gc.collect()
 
 def complete_config(config, args):
     config = copy.deepcopy(config)
@@ -232,7 +234,7 @@ def complete_config(config, args):
 
 def main(args):
     
-    mgf_psm_dict = parse_paths(**args)
+    mgf_psm_dict = parse_config_paths(**args)
 
     if args["filename"] in mgf_psm_dict.keys():
         # Only run pipeline for that file
@@ -240,14 +242,18 @@ def main(args):
             config=mgf_psm_dict[args["filename"]],
             args=args
         )
-        apply_pipeline(config, filename)
+        apply_pipeline(config, filename, args=args)
 
     for filename, paths in mgf_psm_dict.items():
+        if filename not in args["filenames"]:
+            logging.info(f"Skipping processing for {filename}.")
+            continue
+
         config = complete_config(
             config=paths,
             args=args
         )
-        apply_pipeline(config, filename)
+        apply_pipeline(config, filename, args=args)
 
 
 
@@ -293,14 +299,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load config if provided
-    if args.config:
+    args = vars(args)
+
+    if "config" in args.keys():
         
-        with open(args.config, 'r') as f:
+        with open(args['config'], 'r') as f:
             config_args = json.load(f)
         # Override command-line arguments with values from the config file if they aren't provided via the CLI
         for key, value in config_args.items():
-            if getattr(args, key) is None:  # If the argument is not provided in the CLI, override with the config
-                setattr(args, key, value)
+            # try:
+            #     if args[key] is None:  # If the argument is not provided in the CLI, override with the config
+            #         args[key] = value
+            # except:
+            #     args[key] = value
+            args[key] = value
 
-    logging.info("Provided arguments: {}".format(vars(args)))
-    main(vars(args))
+    logging.info("Provided arguments: {}".format(args))
+    main(args)
