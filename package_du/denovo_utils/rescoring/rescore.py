@@ -6,31 +6,20 @@
 
 import json
 import logging
-from multiprocessing import cpu_count
 from typing import Dict, Optional
 import copy
 from glob import glob
 
-import shutil
-import os
 import numpy as np
 import psm_utils.io
-from mokapot.dataset import LinearPsmDataset
 from psm_utils import PSMList
 import pandas as pd
-import pickle
-from psm_utils.io.parquet import ParquetWriter
-from ..parsers import EXTENSIONS
+from ..io.save import save_mokapot_models
+from ..io.read import load_mokapot
+from .fgens import FGens
 
-from tensorflow.keras.models import load_model
-
-from ms2rescore import parse_configurations
 from ms2rescore import exceptions
-from ms2rescore.feature_generators import FEATURE_GENERATORS
 from ms2rescore.parse_psms import parse_psms
-from ms2rescore.parse_spectra import get_missing_values
-from ms2rescore.report import generate
-from ms2rescore.rescoring_engines import mokapot, percolator
 from ms2rescore.rescoring_engines.mokapot import add_peptide_confidence, add_psm_confidence
 
 from ms2rescore.core import (
@@ -53,39 +42,110 @@ from mokapot.model import PercolatorModel
 
 logger = logging.getLogger(__name__)
 
-class FGens:
-    def __init__(self, configuration):
-        self.config = configuration
-
-    def initialize_feature_generators(self):
-        
-        self.feature_generators = {}
-        for fgen_name, fgen_config in self.config["feature_generators"].items():
-            if fgen_name == "maxquant":
-                continue
-            conf = self.config.copy()
-            conf.update(fgen_config)
-            fgen = FEATURE_GENERATORS[fgen_name](**conf)
-
-            self.feature_generators[fgen_name] = fgen
-    
 
 class DeNovoRescorer:
+    """
+    Rescoring object.
+
+    Encapsulates all data and functionalities required to rescore a de novo psmlist.
+    """
     def __init__(self, configuration):
-        self.configuration = configuration
+        """
+        Initialize DeNovoRescorer by initializing the feature generators.
+
+        Parameter
+        ---------
+        configuration: dict
+            Contains settings for each feature generator. (see ms2rescore config for reference)
+        """
+        self.config = configuration
         self.fgens = FGens(configuration=configuration["ms2rescore"])
         self.fgens.initialize_feature_generators()
 
+    def load(
+            self,
+            calibration_folder,
+            mokapot_folder
+    ):
+        """
+        Load all essential data for rescoring from a rescorer created in the past.
+
+        Required data for a reproducible rescorer are:
+        - calibrated feature generators (to ensure reproducible feature generation)
+        - mokapot models (to ensure same rescoring function)
+
+        Parameters
+        ----------
+        calibration_folder: str
+            The folder where feature generation-related files are stored.
+        mokapot_folder: str
+            The folder where mokapot models are stored.
+        """
+        self.fgens.calibrate(
+            calibration_folder=calibration_folder,
+            from_cache=True
+        )
+        self.mokapot_models = load_mokapot(mokapot_folder)
+
+    def calibrate_fgens(
+            self,
+            psm_list,
+            calibration_folder,
+            from_cache: bool=False
+        ) -> None:
+        """
+        Calibrate the feature generators.
+        """
+        # Preprocess the psm_list accordingly. Denovo results should not be used for calibration
+        # THOUGHT: Maybe allow calibrating on denovo results ? This would allow ambiguity estimation
+        # without requiring a ground-truth dataset ? Similar to NOKOI?
+        psm_list = self.preprocess_psm_list(psm_list=psm_list, denovo=False)
+
+        # Calibrate the feature generators
+        self.fgens.calibrate(
+            psm_list=psm_list,
+            calibration_folder=calibration_folder,
+            from_cache=from_cache
+        )
 
     def preprocess_psm_list(
-            self, psm_list, denovo=False
-    ):
-        config = self.configuration["ms2rescore"]
+            self, psm_list: PSMList, denovo: bool=False
+    ) -> PSMList:
+        """
+        Preprocess psm_list prior to rescoring.
+
+        This process mainly entails the following:
+        - Filter psms with ranks lower than configured in max_psm_rank_input
+        - Remove peptidoforms with invalid amino acids
+        - Recalculate q-values if not denovo psmlist
+        - Move score (qvalue, pep and rank) to provenance data
+        - Parse modifications as configured in modification_mapping and fixed_modifications
+        - For denovo: Filter out peptidoforms with length < 4 and add random is_decoy labels
+
+        Parameters
+        ----------
+        psm_list: PSMList
+            PSMList to preprocess.
+        denovo: bool
+            Whether the PSMList contains de novo psms and is thus not used as ground-truth.
+            If True, will not recalculate q-values and do a filtering step on peptidoform length
+            and add is_decoy labels randomly, as this is required when using mokapot.
+
+        Return
+        ------
+        PSMList
+            Preprocessed PSMList.
+        """
+        config = self.config["ms2rescore"]
+
+        # max_psm_rank_input is important in the config when 
+        # rescoring multiple de novo hits of multiple ranks.
         psm_list = parse_psms(config, psm_list, recalculate_qvalues=not denovo)
         psm_list = _fill_missing_precursor_info(psm_list, config)
+        
+        # De novo specific preprocessing
         if denovo:
-            psm_list["retention_time"] = psm_list["retention_time"]/60
-
+            # Filter psms based on length
             # MS2PIP fill fail if the sequence is shorter than 4 amino acids
             mask = np.array([
                 len(psm.peptidoform)>=4 for psm in psm_list
@@ -93,70 +153,31 @@ class DeNovoRescorer:
             dropped = np.sum(~mask)
             if dropped > 0:
                 logging.warning(f"Dropped {dropped} spectra due to peptides with length <4")
-
             psm_list = psm_list[mask]
+
+            # Add is_decoy labels randomly
+            # Otherwise parsing to a PSMDataset in mokapot is not possible.
+            half_targets = [True]*(int(len(psm_list)/2))
+            half_decoys = [False]*(len(psm_list)-len(half_targets))
+            psm_list["is_decoy"] = half_targets+half_decoys
+
         return psm_list
 
-    def retrain_deeplc(self, psm_list, load_from_cache=False, save_model_folder=""):
-        calibration_path = os.path.join(save_model_folder, "calibration.pkl")
 
-        if load_from_cache:
-            logging.info("Loading deeplc from cache")
-            model_paths = []
-            for p in glob(os.path.join(save_model_folder, "*.keras")):
-                model_paths.append(p)
-            
-            with open(calibration_path, "rb") as f:
-                calibration_params = pickle.load(f)
-            
-            deeplc_kwargs = {"path_model": model_paths}
-            deeplc_kwargs.update(calibration_params)
-            self.fgens.feature_generators["deeplc"] = FEATURE_GENERATORS["deeplc"](**deeplc_kwargs)
+    def add_features(self, psm_list: PSMList, feature_types: list=[]) -> None:
+        """
+        Add features to the psm_list using the feature generators loaded in the rescorer object.
 
-            self.fgens.feature_generators['deeplc'].deeplc_predictor.calibrate_dict = deeplc_kwargs['calibrate_dict']
-            self.fgens.feature_generators['deeplc'].deeplc_predictor.calibrate_min = deeplc_kwargs['calibrate_min']
-            self.fgens.feature_generators['deeplc'].deeplc_predictor.calibrate_max = deeplc_kwargs['calibrate_max']
-
-            logging.info(f"Loaded DeepLC models: {self.fgens.feature_generators['deeplc'].deeplc_predictor.model}")
-            logging.info(f"Loaded calibration sets at {calibration_path}")
-            return
-
-        # The model is saved in a temp folder so should edit here to save the deeplc model directly.
-        self.fgens.feature_generators["deeplc"].retrain_deeplc(psm_list)
-        
-        # Save the deeplc model checkpoint
-        deeplc_fgen = self.fgens.feature_generators["deeplc"]
-        
-        for m in deeplc_fgen.selected_model:
-            new_model_path = os.path.join(save_model_folder, os.path.basename(m))
-            
-            loaded_model = load_model(m)
-            loaded_model.save(new_model_path)
-
-            # Delete the temporary directory (Hopes to prevent broken pipes)
-            shutil.rmtree(os.path.dirname(m))  # Manually remove a temporary folder
-            logging.info(f"Saved DeepLC model to {new_model_path}")
-
-        calibration_params = {
-            "calibrate_dict": {new_model_path: deeplc_fgen.deeplc_predictor.calibrate_dict[m]},
-            "calibrate_min": {new_model_path: deeplc_fgen.deeplc_predictor.calibrate_min[m]},
-            "calibrate_max": {new_model_path: deeplc_fgen.deeplc_predictor.calibrate_max[m]}
-        }
-        with open(calibration_path, "wb") as f:
-            pickle.dump(calibration_params, f)
-        logging.info(f"Saved DeepLC calibration to {calibration_path}")
-
-        # Reinitialize the deeplc model to not use the temporary directory in the hopes to prevent broken pipe errors
-        self.retrain_deeplc(
-            psm_list, load_from_cache=True, save_model_folder=save_model_folder
-        )
-            
-
-    def get_im2deep_calibration_df(self, calibration_df=None, load_from_cache=False, save_model_folder=""):
-        # TODO: Should only write or return a calibration df, not create it. To create, use static method in feature generator
-
-
-    def add_features(self, psm_list, feature_types=[]):
+        Parameters
+        ----------
+        psm_list: PSMList
+            Add features to psm_list in the 'rescoring_feature' field.
+        feature_types: list
+            Specifies which features to add. Corresponds to the name of the feature generator.
+            Defaults to all feature generators loaded in the rescorer.
+            To select only a given set of features for rescoring, define this in ms2rescore config
+            as this is handled elsewhere.
+        """
         # Default feature types to all feature generators in the fgen object
         if feature_types == []:
             feature_types = list(self.fgens.feature_generators.keys())
@@ -164,7 +185,7 @@ class DeNovoRescorer:
         if self.fgens.feature_generators["deeplc"].deeplc_predictor is None:
             raise Exception("First retrain deeplc!")
             
-        config = self.configuration["ms2rescore"]
+        config = self.config["ms2rescore"]
         output_file_root = config["output_path"]
 
         # Define feature names; get existing feature names from PSM file
@@ -178,6 +199,7 @@ class DeNovoRescorer:
         logger.debug(
             f"PSMs already contain the following rescoring features: {psm_list_feature_names}"
         )
+
         # Add rescoring features
         for fgen_name, fgen_config in config["feature_generators"].items():
         # TODO: Handle this somewhere else, more generally?
@@ -239,21 +261,35 @@ class DeNovoRescorer:
             logger.info("No rescoring engine specified. Skipping rescoring.")
             return None
 
-    def filter_psm_list(self, psm_list, denovo=False):
+    def filter_psm_list(self, psm_list: PSMList) -> PSMList:
+        """
+        Filter the rescoring features in the psm_list to only those specified in the config.
+
+        Config field used as filter: ['ms2rescore']['rescoring_features']
+
+        Parameter
+        ---------
+        psm_list: PSMList
+            psm_list for which features should be filtered. The filter is specified in loaded config.
+        
+        Return
+        ------
+        PSMList
+            PSMList with filtered rescoring_features field.
+        """
         psm_list_rescoring = copy.deepcopy(psm_list)
-        psm_list_rescoring["rescoring_features"] = np.array(list(pd.DataFrame(psm_list_rescoring["rescoring_features"].tolist())[
-            self.configuration["ms2rescore"]["rescoring_features"]
-        ].to_dict(orient="index").values()))
-
-        # Otherwise cannot convert to a mokapot PSMDataset
-        if denovo:
-            half_targets = [True]*(int(len(psm_list_rescoring)/2))
-            half_decoys = [False]*(len(psm_list_rescoring)-len(half_targets))
-            psm_list_rescoring["is_decoy"] = half_targets+half_decoys
-
+        psm_list_rescoring["rescoring_features"] = np.array(
+            list(
+                pd.DataFrame(
+                    psm_list_rescoring["rescoring_features"].tolist() # Parse feature field
+                )[
+                    self.config["ms2rescore"]["rescoring_features"] # Filter features
+                ].to_dict(orient="index").values()
+            )
+        )
         return psm_list_rescoring
 
-    def train_mokapot_models(self, psm_list, save_folder=None):
+    def train_mokapot_models(self, psm_list: PSMList, save_folder=None):
         """
         Use psm_list and configuration to train mokapot models. They will be stored as attributes
         and are optionally saved to a given folder (save_folder)
@@ -264,7 +300,7 @@ class DeNovoRescorer:
         # Filter to features specified
         psm_list_rescoring = self.filter_psm_list(psm_list)
 
-        config = self.configuration["ms2rescore"]
+        config = self.config["ms2rescore"]
         if "fasta_file" not in config["rescoring_engine"]["mokapot"]:
             config["rescoring_engine"]["mokapot"]["fasta_file"] = config["fasta_file"]
         if "protein_kwargs" in config["rescoring_engine"]["mokapot"]:
@@ -279,16 +315,16 @@ class DeNovoRescorer:
         logger.debug(f"Mokapot brew options: `{kwargs}`")
         try:
             _, models = brew(
-                lin_psm_data, model=PercolatorModel(train_fdr=config["rescoring_engine"]["mokapot"]["train_fdr"]), rng=8
+                lin_psm_data,
+                model=PercolatorModel(
+                    train_fdr=config["rescoring_engine"]["mokapot"]["train_fdr"]
+                ),
+                rng=8
             )
         except RuntimeError as e:
             raise exceptions.RescoringError("Mokapot could not be run. Please check the input data.") from e
 
-        if save_folder is not None:
-            for i, model in enumerate(models):
-                model.save(
-                    os.path.join(save_folder, f"mokapot_model_{i}.pkl")
-                )
+        save_mokapot_models(models, save_folder)
         self.mokapot_models = models
 
 
@@ -296,7 +332,7 @@ class DeNovoRescorer:
         """
         Rescore using trained mokapot models.
         """
-        config = self.configuration["ms2rescore"]
+        config = self.config["ms2rescore"]
         # Rescore PSMs
         _set_log_levels()
 
@@ -306,11 +342,11 @@ class DeNovoRescorer:
         # The brew function performs a calibration between the fold based on the scores outputted.
         # I really dont want this because if i use the same models but a different psm_list, this
         # is scored with a differing scoring function!!!
-
         scores = _predict(
             lin_psm_data, models=self.mokapot_models
         )
 
+        # When ground-truth, the previous confidence estimates will be updated.
         if not denovo:
             confidence = lin_psm_data.assign_confidence(
                 scores=scores
@@ -323,6 +359,7 @@ class DeNovoRescorer:
             psm_list = _filter_by_rank(psm_list, config["max_psm_rank_output"], False)
             psm_list = _calculate_confidence(psm_list)
 
+        # For denovo psm_lists, will add a single score to the provenance_data dictionary.
         else:
             for psm, ms2rescore_score in zip(psm_list, scores):
                 psm["provenance_data"].update(
@@ -331,7 +368,9 @@ class DeNovoRescorer:
     
 def _predict(dset, models):
     """
-    Return the new scores for the dataset
+    Return the new scores for the dataset.
+
+    Equals the average of the predictions from all models.
 
     Parameters
     ----------
@@ -353,138 +392,3 @@ def _predict(dset, models):
         scores.append(model.predict(test_set))
     
     return np.array(scores).mean(axis=0)
-
-
-def load_configuration(
-        path_config_ms2rescore,
-        psm_file,
-        spectrum_path
-    ):
-    with open(path_config_ms2rescore) as config_file:
-        configuration = json.load(config_file)
-    configuration["ms2rescore"]["psm_file"] = psm_file
-    configuration["ms2rescore"]["spectrum_path"] = spectrum_path
-    configuration = parse_configurations(configurations=configuration)
-    return configuration
-
-
-def load_psm_features(psm_path=None, feature_path=None):
-
-    with open(psm_path, "rb") as f:
-        psm_list = pickle.load(f)
-    features = pd.read_parquet(feature_path)
-    if "rescoring_features" in features.columns:
-        features = pd.concat(
-            [
-                features[features.columns[:3]].reset_index(drop=True),
-                pd.DataFrame(features['rescoring_features'].tolist())
-            ],
-            axis=1
-        )
-
-    recs = {
-        spec_id: feature_dict for spec_id, feature_dict in zip(
-            features["spectrum_id"],
-            features.set_index("spectrum_id")[features.columns[3:]].to_dict("records")
-        )
-    }
-
-    # Beware of pythons object reference system
-    psm_list['rescoring_features'] = [{} for i, _ in enumerate(psm_list)]
-    _ = [psm["rescoring_features"].update(recs[psm["spectrum_id"]]) for psm in psm_list]
-            
-    return psm_list
-
-def load_mokapot(mokapot_folder):
-    models = []
-    for i in range(3):
-        with open(os.path.join(mokapot_folder, f"mokapot_model_{i}.pkl"), "rb") as f:
-            models.append(pickle.load(f))
-    return models
-
-def load_rescorer(rescorer: DeNovoRescorer, mokapot_folder, load_deeplc_from_cache=False, psm_path=None, feature_path=None):
-    if psm_path is not None and feature_path is not None:
-        psm_list = load_psm_features(psm_path=psm_path, feature_path=feature_path)
-            
-        # Retrain if use_deeplc_model_path is set to None. Store model in save_deeplc_path (folder)
-        rescorer.retrain_deeplc(psm_list, load_from_cache=load_deeplc_from_cache, save_model_folder=mokapot_folder)
-
-    else:
-        psm_list = None
-
-    models = load_mokapot(mokapot_folder)
-    rescorer.mokapot_models = models
-    return psm_list
-
-def save_object(obj, obj_path, filetype='pickle'):
-    os.makedirs(os.path.dirname(obj_path), exist_ok=True)
-
-    if filetype=='pickle':
-        with open(obj_path, "wb") as f:
-            pickle.dump(obj, f)
-    elif filetype=='parquet':
-        if isinstance(obj, PSMList):
-            w = ParquetWriter(path=obj_path)
-            w.write_file(obj)
-        else:
-            raise Exception(f"Cannot write object with type {type(obj)} to parquet. Must be type {type(PSMList)}.")
-
-
-def already_trained(
-        save_psm_path,
-        save_feature_path,
-        save_mokapot_paths
-    ):
-
-    for p in [save_psm_path, save_feature_path] + save_mokapot_paths:
-        if not os.path.exists(p):
-            return False
-    return True
-
-def parse_config_paths(
-        ground_truth_folder,
-        mgf_folder,
-        denovo_folder,
-        postprocessing_folder,
-        engines,
-        post_processors=["instanovoplus", "spectralis"],
-        *args,
-        **kwargs
-):
-    
-    mgf_psm_dict = {}
-    for mgf_path in glob(os.path.join(mgf_folder, "*.mgf")):
-        ground_truth_filetype = "sage"
-        filename = os.path.basename(mgf_path).split(".")[0]
-        psm_file_path = os.path.join(ground_truth_folder, filename + EXTENSIONS[ground_truth_filetype])
-        
-        if not os.path.exists(mgf_path) or not os.path.exists(psm_file_path):
-            continue
-
-        psm_dict = {
-            "psm_file": psm_file_path,
-            "spectrum_path": mgf_path
-        }
-
-        denovo_dict = {}
-        for engine in engines:
-            for post_processor in post_processors:
-                for result_path in glob(
-                    os.path.join(postprocessing_folder, post_processor)+f"/{engine}/{filename}*"
-                ):
-                    engine_label = f"{post_processor}__{engine}"
-                    denovo_dict[engine_label] = result_path
-            else:
-                denovo_path = os.path.join(
-                    denovo_folder, engine, filename + f".{engine}" + EXTENSIONS[engine]
-                )
-                if os.path.exists(denovo_path):
-                    denovo_dict[engine] = os.path.join(
-                        denovo_folder, engine, filename + f".{engine}" + EXTENSIONS[engine]
-                    )
-
-        if denovo_dict == {}:
-            continue
-        psm_dict["denovo"] = denovo_dict
-        mgf_psm_dict[filename] = psm_dict
-    return mgf_psm_dict
