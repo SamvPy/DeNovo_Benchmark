@@ -70,7 +70,7 @@ def pepnet_parser(
                 run=run,
                 score=x["Score"],
                 precursor_mz=x["precursor_mz"],
-                retention_time=x["rtinseconds"],
+                retention_time=x["rtinseconds"]/60,
                 source="PepNet",
                 metadata={
                     "aa_scores": x["Positional Score"],

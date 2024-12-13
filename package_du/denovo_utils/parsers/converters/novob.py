@@ -158,7 +158,7 @@ def select_top_PSM(
             run=run,
             score=proba,
             precursor_mz=x["precursor_mz"],
-            retention_time=x["rtinseconds"],
+            retention_time=x["rtinseconds"]/60,
             source="NovoB",
             metadata={"ppm_error": mass_error, "scans": x["scans"]},
         )

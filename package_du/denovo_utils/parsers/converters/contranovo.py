@@ -92,7 +92,7 @@ def contranovo_parser(
                 run=run,
                 score=x["search_engine_score[1]"],
                 precursor_mz=x["precursor_mz"],
-                retention_time=x["rtinseconds"],
+                retention_time=x["rtinseconds"]/60,
                 source="ContraNovo",
                 metadata={
                     "aa_scores": x["opt_ms_run[1]_aa_scores"],

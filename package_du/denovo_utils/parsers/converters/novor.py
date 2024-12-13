@@ -100,7 +100,7 @@ def novor_parser(
             run=run,
             score=x["score"],
             precursor_mz=x["precursor_mz"],
-            retention_time=x["rtinseconds"],
+            retention_time=x["rtinseconds"]/60,
             source="Novor",
             metadata={
                 "scans": x["scans_x"],

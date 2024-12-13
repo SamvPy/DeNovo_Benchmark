@@ -203,7 +203,7 @@ def pepnovo_parser(
             run=run,
             score=x["score"],
             precursor_mz=x["precursor_mz"],
-            retention_time=x["rtinseconds"],
+            retention_time=x["rtinseconds"]/60,
             source="PepNovo+",
             metadata={
                 "n_shift": x["n_shift"],

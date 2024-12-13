@@ -60,7 +60,7 @@ def spectralis_parser(
                 run=run,
                 score=x["score_spectralis-ea"],
                 precursor_mz=x["precursor_mz"],
-                retention_time=x["rtinseconds"],
+                retention_time=x["rtinseconds"]/60,
                 source="Spectralis",
                 metadata={
                     "base_prediction": x["source"]
