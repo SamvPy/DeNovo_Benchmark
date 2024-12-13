@@ -1,4 +1,4 @@
-from pyteomics import mgf
+from pyteomics import mass, mgf
 import polars as pl
 import os
 from glob import glob
@@ -98,6 +98,7 @@ def get_annotated_spectrum(
         A PSM containing matching information
     mgf_spectrum: MGFIndexed
         A pyteomics mgf-formatted spectrum
+
     Returns
     -------
     tuple[Spectrum, Spectrum]
@@ -105,13 +106,13 @@ def get_annotated_spectrum(
         - Theoretical fragments list
     """
     spectrum = RawSpectrum(
-        title=mgf_spectrum["params"]["title"],
+        title=psm['spectrum_id'],
         num_scans=int(psm["spectrum_id"].split("=")[-1]),
-        precursor_mass=mgf_spectrum["params"]["pepmass"][0],
-        precursor_charge=int(mgf_spectrum["params"]["charge"][0]),
+        rt=psm['retention_time'],
+        precursor_mass=mass.calculate_mass(psm.peptidoform.composition),
+        precursor_charge=psm.get_precursor_charge(),
         mz_array=mgf_spectrum["m/z array"],
-        intensity_array=mgf_spectrum["intensity array"],
-        rt=mgf_spectrum["params"]["rtinseconds"]
+        intensity_array=mgf_spectrum["intensity array"]
     )
     peptide = LinearPeptide(psm["peptidoform"].proforma)
     return spectrum.annotate(peptide, frag_model), peptide.generate_theoretical_fragments(2, frag_model)

@@ -4,6 +4,7 @@ from psm_utils import PSM, PSMList
 import logging
 import numpy as np
 from pyteomics import mgf
+from pyteomics.mzml import PreIndexedMzML
 
 from .explained_intensity import ExplainedIntensityFeatures
 from .hyperscore import HyperscoreGenerator
@@ -64,12 +65,19 @@ class PeakFeatureGenerator(FeatureGeneratorBase):
         """Compute and add rescoring features to psmlist."""
 
         logging.info("Retrieving spectra...")
-        mgf_file = mgf.read(self.config["spectrum_path"])
-        spectra = mgf_file.get_by_ids([psm.spectrum_id for psm in psm_list])
+        if self.config['spectrum_path'].endswith('.mgf'):
+            mgf_file = mgf.read(self.config["spectrum_path"])
+            spectra = mgf_file.get_by_ids([psm.spectrum_id for psm in psm_list])
+        elif self.config['spectrum_path'].endswith('.mzML'):
+            mzml_file = PreIndexedMzML(self.config['spectrum_path'])
+            spectra = mzml_file.get_by_ids([psm.spectrum_id for psm in psm_list])
+        else:
+            raise Exception(f"Spectrum path {self.config['spectrum_path']} seems to not be in mgf or mzML format.")
+        
         logging.info("Done.")
 
         if self.annotate:            
-            # Get annoated spectrum vectors
+            # Get annotated spectrum vectors
             pes = []
             svs = parallel_annotate_psms(
                 psm_list=psm_list,

@@ -13,8 +13,7 @@ class PSMProcessor:
             ion_types = self.config["ion_types"],
             neutral_losses = self.config["neutral_losses"]
         )
-        sv.parse(psm_mgf[0], psm_mgf[1])
-
+        sv.parse(psm_mgf[0], psm_mgf[1], self.config['spectrum_format'])
         return sv
 
 

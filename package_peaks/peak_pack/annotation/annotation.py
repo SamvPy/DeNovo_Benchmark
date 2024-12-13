@@ -19,7 +19,7 @@ class SpectrumVector():
     def __init__(
             self,
             ion_types,
-            neutral_losses
+            neutral_losses,
     ):
         self.annotated = False
         self.ion_types = ion_types
@@ -27,17 +27,26 @@ class SpectrumVector():
         self.tic = 0.0
         self.precursor_mz = np.nan
 
-    def parse(self, psm, spectrum):
-
-        self.annot_spec, theo_frags = get_annotated_spectrum(psm, spectrum)
+    def parse(self, psm, spectrum, spectrum_format='mgf'):
+        annot_spec, theo_frags = get_annotated_spectrum(psm, spectrum)
+        annot_spec = annot_spec.spectrum
+        self.by = get_by_fragments(annot_spec)
         self.tic = np.sum(spectrum["intensity array"])
         self.peptidoform = psm.peptidoform
         self.spectrum_id = psm.spectrum_id
-        self.precursor_mz = spectrum["params"]["pepmass"][0]
+
+        if spectrum_format=='mgf':
+            self.precursor_mz = spectrum["params"]["pepmass"][0]
+        elif spectrum_format=='mzML':
+            self.precursor_mz = spectrum['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]['selected ion m/z']
+        else:
+            raise Exception(f"Selected spectrum format ({spectrum_format}) is not supported in SpectrumVector parsing.")
+
         self.precursor_ppm = calculate_ppm(m1=self.precursor_mz, m2=psm.precursor_mz)
 
         # Convert the list of fragments to a polars object
-        annot_frags, mz_array, intensity_array = annot_peaks_to_fragments(self.annot_spec.spectrum)
+        annot_frags, mz_array, intensity_array = annot_peaks_to_fragments(annot_spec)
+
         spec_polars_theo = fragments_to_polars(
             fragment_list=theo_frags,
             ion_types=self.ion_types,
@@ -140,3 +149,40 @@ class SpectrumVector():
     @property
     def n(self):
         return len(self.peptidoform)-1
+    
+
+def infer_fragment_identity(frag, allow_ion_types=['b', 'y']):
+    ion = frag.ion
+
+    is_allowed = False
+    for allowed_ion_type in allow_ion_types:
+        if allowed_ion_type in ion:
+            is_allowed=True
+            break
+    
+    if not is_allowed:
+        return False
+    # Radicals
+    if "·" in ion:
+        return False
+    if frag.neutral_loss is not None:
+        return False
+    if frag.charge > 2:
+        return False
+    
+    return ion[0]
+
+def get_by_fragments(annotated_spectrum):
+    b_intensities = []
+    y_intensities = []
+    for peak in annotated_spectrum:
+        
+        for fragment in peak.annotation:
+
+            ion_type = infer_fragment_identity(fragment)
+            
+            if ion_type == 'b':
+                b_intensities.append(peak.intensity)
+            if ion_type == 'y':
+                y_intensities.append(peak.intensity)
+    return b_intensities, y_intensities

@@ -105,7 +105,7 @@ class HyperscoreGenerator(FeatureGeneratorBase):
 
         for psm, spectrum in tqdm(zip(psm_list, spectra)):
             
-            b, y = get_by_fragments(spectrum.annot_spec)
+            b, y = spectrum.by
             hs = calculate_hyperscore(
                 n_y=len(y),
                 n_b=len(b),
