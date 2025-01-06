@@ -329,6 +329,11 @@
                     "description": "Fragmentation tolerance mode",
                     "type": "string",
                     "default": "ppm"
+                },
+                "spectrum_format": {
+                    "description": "Format of the spectrum file (mzML or mgf)",
+                    "type": "string",
+                    "default": "mzML"
                 }
             }
         },

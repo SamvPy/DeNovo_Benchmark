@@ -2,6 +2,8 @@ import os
 from glob import glob
 import logging
 
+from ..parsers.constants import EXTENSIONS
+
 logger = logging.getLogger(__name__)
 
 def already_trained(
@@ -76,3 +78,73 @@ def parse_config_paths(
         psm_dict["denovo"] = denovo_dict
         mgf_psm_dict[filename] = psm_dict
     return mgf_psm_dict
+
+
+def setup_paths(output_folder, run_name, filename):
+    """
+    Set up all the paths necessary for rescoring.
+
+    These include the following:
+    - feature_path: Path to a file containing the features
+    - psm_path: Path to the psmlist
+    - mokapot_model_folder: Folder where the mokapot models are stored
+    - mokapot_model_path: speaks for itself
+    - calibration_folder: Folder where calibration files for the feature generators
+    are stored
+
+    Parameters
+    ----------
+    output_folder: str
+        The root folder where all rescoring results are stored. 
+        This folder will contain subfolders named by each run. Within this,
+        4 folders are created:
+        - features: Feature file
+        - psmlist: PSMList
+        - mokapot: Trained mokapot models
+        - calibration: Feature generation calibration files
+    
+    run_name: str
+        The name of the mass spec run undergoing rescoring
+    
+    filename: str
+        The name of this specific rescoring attempt. Typically is 'ground_truth' or 
+        the name of a search engine.
+    """
+    save_feature_path = "{}/{}/{}/{}.parquet".format(
+        output_folder,
+        run_name,
+        "features",
+        filename
+    )
+    save_psm_path = "{}/{}/{}/{}.parquet".format(
+        output_folder,
+        run_name,
+        "psmlist",
+        filename
+    )
+
+    mokapot_model_folder = "{}/{}/mokapot".format(
+        output_folder,
+        run_name
+    )
+    save_mokapot_paths = [
+        os.path.join(mokapot_model_folder, f"mokapot_model_{i}.pkl") for i in range(3)
+    ]
+
+    calibration_folder = "{}/{}/calibration".format(
+        output_folder,
+        run_name
+    )
+
+    os.makedirs(os.path.dirname(save_feature_path), exist_ok=True)
+    os.makedirs(os.path.dirname(save_psm_path), exist_ok=True)
+    os.makedirs(calibration_folder, exist_ok=True)
+    os.makedirs(mokapot_model_folder, exist_ok=True)
+
+    return {
+        'feature_path': save_feature_path,
+        'psm_path': save_psm_path,
+        'mokapot_model_folder': mokapot_model_folder,
+        'mokapot_model_paths': save_mokapot_paths,
+        'calibration_folder': calibration_folder
+    }

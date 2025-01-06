@@ -116,7 +116,7 @@ class FGens:
                     model_path_folder=calibration_folder,
                     calibration_path=deeplc_calibration_path
                 )
-                self.fgens.feature_generators['deeplc'] = deeplc_fgen
+                self.feature_generators['deeplc'] = deeplc_fgen
         
         if 'im2deep' in self.feature_generators.keys():
             # Specify path for storage
@@ -148,7 +148,7 @@ class FGens:
         self.feature_generators["deeplc"].retrain_deeplc(psm_list)
         
         # Save the deeplc model checkpoint
-        deeplc_fgen = self.fgens.feature_generators["deeplc"]
+        deeplc_fgen = self.feature_generators["deeplc"]
         for m in deeplc_fgen.selected_model:
             new_model_path = os.path.join(save_model_folder, os.path.basename(m))
             

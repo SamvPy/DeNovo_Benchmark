@@ -9,12 +9,13 @@ import logging
 from typing import Dict, Optional
 import copy
 from glob import glob
+import os
 
 import numpy as np
 import psm_utils.io
 from psm_utils import PSMList
 import pandas as pd
-from ..io.save import save_mokapot_models
+from ..io.save import save_mokapot_models, save_pickle, save_features, save_psmlist
 from ..io.read import load_mokapot
 from .fgens import FGens
 
@@ -65,7 +66,7 @@ class DeNovoRescorer:
     def load(
             self,
             calibration_folder,
-            mokapot_folder
+            mokapot_folder=None
     ):
         """
         Load all essential data for rescoring from a rescorer created in the past.
@@ -85,7 +86,9 @@ class DeNovoRescorer:
             calibration_folder=calibration_folder,
             from_cache=True
         )
-        self.mokapot_models = load_mokapot(mokapot_folder)
+
+        if mokapot_folder is not None:
+            self.mokapot_models = load_mokapot(mokapot_folder)
 
     def calibrate_fgens(
             self,
@@ -117,7 +120,7 @@ class DeNovoRescorer:
         This process mainly entails the following:
         - Filter psms with ranks lower than configured in max_psm_rank_input
         - Remove peptidoforms with invalid amino acids
-        - Recalculate q-values if not denovo psmlist
+        - Recalculate q-values if not denovo psmlist and if q-values are NOT present
         - Move score (qvalue, pep and rank) to provenance data
         - Parse modifications as configured in modification_mapping and fixed_modifications
         - For denovo: Filter out peptidoforms with length < 4 and add random is_decoy labels
@@ -325,6 +328,7 @@ class DeNovoRescorer:
             raise exceptions.RescoringError("Mokapot could not be run. Please check the input data.") from e
 
         save_mokapot_models(models, save_folder)
+        save_pickle(lin_psm_data.features.columns.tolist(), os.path.join(save_folder, 'feature_names.pkl'))
         self.mokapot_models = models
 
 
@@ -336,7 +340,7 @@ class DeNovoRescorer:
         # Rescore PSMs
         _set_log_levels()
 
-        psm_list_rescoring = self.filter_psm_list(psm_list, denovo=denovo)
+        psm_list_rescoring = self.filter_psm_list(psm_list)
         lin_psm_data = convert_psm_list(psm_list_rescoring)
 
         # The brew function performs a calibration between the fold based on the scores outputted.
@@ -365,7 +369,62 @@ class DeNovoRescorer:
                 psm["provenance_data"].update(
                     {f"score_ms2rescore": str(ms2rescore_score)}
                 )
-    
+
+    def batched_fgen_and_rescore(self, psm_list, n_psms=10000, denovo=True, save_folder="", filename='filename'):
+        # TODO: Implement a batched version of add_features and rescore
+        # This should include a concatenation for saving psm_lists and features.
+        os.makedirs(os.path.dirname(
+            os.path.join(save_folder, 'features')
+        ), exist_ok=True)
+        os.makedirs(os.path.dirname(
+            os.path.join(save_folder, "psmlist")
+        ), exist_ok=True)
+
+        counter = 0
+        lower = 0
+        upper = min(len(psm_list), n_psms)
+        psm_list = self.preprocess_psm_list(psm_list, denovo=True)
+        
+
+        while True:
+            # Select subset
+            psm_subset = psm_list[lower: upper]
+
+            # Preprocess again to make sure some decoy or targets
+            # are present
+            psm_subset = self.preprocess_psm_list(psm_subset, denovo=True)
+
+            # Add features and rescore
+            self.add_features(psm_subset)
+            self.rescore(psm_subset, denovo=True)
+
+            # Save
+            save_features(
+                psm_list=psm_subset,
+                save_path=os.path.join(
+                    save_folder,
+                    "features"
+                    f"{filename}_{counter}.parquet"
+                )
+            )
+            save_psmlist(
+                psm_list=psm_subset,
+                save_path=os.path.join(
+                    save_folder,
+                    "psmlist"
+                    f"{filename}_{counter}.parquet"
+                )
+            )
+
+            # Break if the upper signified the end.
+            if upper == len(psm_list):
+                break
+            lower += n_psms
+            upper += n_psms
+            upper = min(upper, len(psm_list))
+            counter += 1
+
+
 def _predict(dset, models):
     """
     Return the new scores for the dataset.

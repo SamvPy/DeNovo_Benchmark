@@ -4,9 +4,9 @@
         "feature_generators": {
             "basic": {},
             "ms2pip": {
-                "model": "HCD",
+                "model": "timsTOF2024",
                 "ms2_tolerance": 0.02,
-                "processes": 8
+                "processes": 1
             },
             "deeplc": {
                 "deeplc_retrain": true
@@ -38,7 +38,8 @@
                 "ion_types_evidence": ["b1", "y1", "b2", "y2"],
                 "neutral_losses_evidence": ["", "-H2O1"],
                 "fragment_tol_mass": 20,
-                "fragment_tol_mode": "ppm"
+                "fragment_tol_mode": "ppm",
+                "spectrum_format": "mzML"
             },
             "im2deep": {}
         },
