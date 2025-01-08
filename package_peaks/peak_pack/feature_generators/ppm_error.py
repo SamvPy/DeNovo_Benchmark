@@ -1,7 +1,7 @@
 from ms2rescore.feature_generators.base import FeatureGeneratorBase
 from typing import List
 from psm_utils import PSM, PSMList
-from ..utils import ion_dict_to_matrix
+from ..utils import ion_dict_to_matrix, calculate_ppm
 from ..annotation.annotation import SpectrumVector
 import numpy as np
 from tqdm import tqdm
@@ -19,7 +19,8 @@ class PPMFeatures(FeatureGeneratorBase):
         return [
             "ppm_mean_y",
             "ppm_mean_b",
-            "ppm_mean_by"
+            "ppm_mean_by",
+            "ppm_precursor"
         ]
 
     @property

@@ -7,6 +7,7 @@ from .utils import (
     ion_dict_to_matrix,
     matrix_to_ion_dict,
     calculate_ppm,
+    calculate_ppm_matrix,
     mask_duplicates
 )
 
@@ -19,5 +20,6 @@ __all__ = [
     "ion_dict_to_matrix",
     "matrix_to_ion_dict",
     "calculate_ppm",
+    "calculate_ppm_matrix"
     "mask_duplicates",
 ]

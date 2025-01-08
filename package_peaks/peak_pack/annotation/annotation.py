@@ -12,7 +12,8 @@ from ..utils.utils import (
     parse_to_iontype_dict,
     ion_dict_to_matrix,
     matrix_to_ion_dict,
-    calculate_ppm
+    calculate_ppm,
+    calculate_ppm_matrix
 )
 
 class SpectrumVector():
@@ -42,7 +43,15 @@ class SpectrumVector():
         else:
             raise Exception(f"Selected spectrum format ({spectrum_format}) is not supported in SpectrumVector parsing.")
 
-        self.precursor_ppm = calculate_ppm(m1=self.precursor_mz, m2=psm.precursor_mz)
+        self.precursor_ppm = calculate_ppm(
+            # Observed mz (extracted from raw file)
+            m1=self.precursor_mz,
+            # Theoretical mz, which will be modified with isotopes
+            m2=psm.peptidoform.theoretical_mz,
+            charge=psm.peptidoform.precursor_charge,
+            isotopes=[-1,0,1,2],
+            max_value=50
+        )
 
         # Convert the list of fragments to a polars object
         annot_frags, mz_array, intensity_array = annot_peaks_to_fragments(annot_spec)
@@ -138,7 +147,7 @@ class SpectrumVector():
 
         ppm_diff = np.where(
             matrix_experimental!=0, 
-            calculate_ppm(
+            calculate_ppm_matrix(
                 matrix_theoretical,
                 matrix_experimental,
             ),

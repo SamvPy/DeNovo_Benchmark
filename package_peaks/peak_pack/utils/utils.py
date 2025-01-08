@@ -8,6 +8,8 @@ import multiprocessing
 
 from rustyms import RawSpectrum, LinearPeptide, FragmentationModel
 
+NEUTRON_MASS = 1.00866491606
+
 def fragments_to_polars(fragment_list, ion_types, neutral_losses, mz_array=None, intensity_array=None):
     # Can be done way quicker!
 
@@ -227,7 +229,18 @@ def matrix_to_ion_dict(matrix, ion_types):
         ion_dict[ion_type] = matrix[i]
     return ion_dict
 
-def calculate_ppm(m1, m2):
+def calculate_ppm(m1, m2, charge=1, isotopes=[0], max_value=50):
+
+    ms1_error = max_value
+
+    for isotope in isotopes:
+        m2_i = m2 + (isotope * (NEUTRON_MASS / charge))
+        ms1_error_i = abs(((m1-m2_i)/m2_i)*10**6)
+        ms1_error = min(ms1_error, ms1_error_i)
+
+    return ms1_error
+
+def calculate_ppm_matrix(m1, m2):
     return ((m1-m2)/m1)*1e6
 
 def mask_duplicates(matrix, preference_list):
