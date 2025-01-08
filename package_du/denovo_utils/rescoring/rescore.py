@@ -403,7 +403,7 @@ class DeNovoRescorer:
                 psm_list=psm_subset,
                 save_path=os.path.join(
                     save_folder,
-                    "features"
+                    "features",
                     f"{filename}_{counter}.parquet"
                 )
             )
@@ -411,7 +411,7 @@ class DeNovoRescorer:
                 psm_list=psm_subset,
                 save_path=os.path.join(
                     save_folder,
-                    "psmlist"
+                    "psmlist",
                     f"{filename}_{counter}.parquet"
                 )
             )

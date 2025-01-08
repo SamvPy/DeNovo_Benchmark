@@ -279,7 +279,10 @@ def extract_metadata(psm, key, infer_datatype=False):
     if key in psm['metadata'].keys():
         el = psm['metadata'][key]
         if infer_datatype:
-            return eval(el)
+            try:
+                return eval(el)
+            except:
+                return el
         return el
     return None
 

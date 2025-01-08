@@ -94,7 +94,7 @@ def load_features(feature_path) -> dict:
         spec_id = row["spectrum_id"]
         rank = row["rank"]
         # Convert feature columns to a dictionary for the current row
-        feature_dict = row[features.columns[4:]].to_dict()
+        feature_dict = row[features.columns[3:]].to_dict()
         
         # Ensure there is a dictionary for this spec_id
         if spec_id not in recs:
@@ -114,7 +114,14 @@ def load_psmlist(psm_path) -> PSMList:
     if ('PE_evidence_labels' in psm_list[0]['metadata'].keys() and
         'PE_evidence' in psm_list[0]['metadata'].keys()):
         for psm in psm_list:
-            metadata = {k: eval(v) for k, v in psm['metadata'].items()}
+
+            metadata = {}
+            for k, v in psm['metadata'].items():
+                try:
+                    metadata[k] = eval(v)
+                except:
+                    metadata[k] = v
+
             metadata['peptide_evidence'] = PeptideEvidence(
                 peptidoform=psm['peptidoform'],
                 evidence_labels=eval(psm['metadata']['PE_evidence_labels']),

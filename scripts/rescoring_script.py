@@ -4,16 +4,16 @@ from glob import glob
 from denovo_utils.parsers import DenovoEngineConverter
 from denovo_utils.parsers.constants import EXTENSIONS
 from denovo_utils.rescoring import DeNovoRescorer
-from denovo_utils.rescoring.rescore import (
+from denovo_utils.io.read import (
     load_configuration,
-    load_rescorer,
-    save_object,
+    load_psmlist_and_features
+)
+from denovo_utils.io.save import save_pickle
+
+from denovo_utils.rescoring.utils import (
     already_trained,
     parse_config_paths,
-    load_psm_features,
-    load_mokapot
 )
-import pickle
 import gc
 
 from ms2rescore import parse_configurations
@@ -44,7 +44,7 @@ def apply_pipeline(config, filename, args=None):
         "features",
         config["ground_truth_engine"]
     )
-    save_psm_path = "{}/{}/{}/{}.pkl".format(
+    save_psm_path = "{}/{}/{}/ground_truth.{}.parquet".format(
         config["output_folder"],
         filename,
         "psmlist",
@@ -96,13 +96,17 @@ def apply_pipeline(config, filename, args=None):
             save_object(
                 psm_list,
                 save_psm_path,
-                'pickle'
+                'parquet'
             )
     
     else:
         # 1. Load the ground-truth dataset
         logging.info(f"No mokapot models, rescored psm_list or fgen file found for {filename}")
         logging.info("Reading ground-truth data")
+        os.makedirs(mokapot_model_folder, exist_ok=True)
+        os.makedirs(os.path.dirname(save_feature_path), exist_ok=True)
+        os.makedirs(os.path.basename(save_psm_path), exist_ok=True)
+
         parser = DenovoEngineConverter.select(config["ground_truth_engine"])
         psm_list = parser.parse(
             result_path=config["psm_file"],
@@ -113,18 +117,25 @@ def apply_pipeline(config, filename, args=None):
         # 2. Preprocess the psm_list for rescoring
         psm_list = rescorer.preprocess_psm_list(psm_list)
 
-        # 3. Set up the deeplc model by transfer learning
+        # 3.1 Set up the deeplc model by transfer learning
         logging.info("Retraining DeepLC")
-        rescorer.retrain_deeplc(psm_list)
+        rescorer.retrain_deeplc(
+            psm_list,
+            save_model_folder=mokapot_model_folder
+        )
+
+        # 3.2 Set up IM2Deep calibration dataframe
+        logging.info('Creating calibration dataframe for IM2Deep.')
+        rescorer.get_im2deep_calibration_df(
+            psm_list=psm_list,
+            save_model_folder=mokapot_model_folder
+        )
 
         # 4. Generate features for x psm_lists
         logging.info("Adding features for ground truth")
         rescorer.add_features(psm_list)
 
         # 5. Use the ground-truth for mokapot model training
-        os.makedirs(mokapot_model_folder, exist_ok=True)
-        os.makedirs(os.path.dirname(save_feature_path), exist_ok=True)
-        os.makedirs(os.path.basename(save_psm_path), exist_ok=True)
         logging.info("Training mokapot models")
         rescorer.train_mokapot_models(
             psm_list,
@@ -135,14 +146,14 @@ def apply_pipeline(config, filename, args=None):
         logging.info(f"Rescoring ground-truth. {len(psm_list)} psms")
         rescorer.rescore(psm_list)
 
-        psm_features = psm_list.to_dataframe()[["spectrum_id", "run", "source", "rescoring_features"]]
+        psm_features = psm_list.to_dataframe()[["spectrum_id", "rank", "run", "source", "rescoring_features"]]
         psm_features.to_parquet(save_feature_path)
         psm_list["rescoring_features"] = [{} for i, _ in enumerate(psm_list)]
         
         save_object(
             psm_list,
             save_psm_path,
-            'pickle'
+            'parquet'
         )
 
     # 7. Apply the trained fgens and mokapot model on the denovo PSMS
@@ -159,7 +170,7 @@ def apply_pipeline(config, filename, args=None):
                 base_denovo,
                 engine
             )
-            save_psm_path = "{}/{}/{}/{}.{}.pkl".format(
+            save_psm_path = "{}/{}/{}/{}.{}.parquet".format(
                 config["output_folder"],
                 filename,
                 "psmlist",
@@ -173,7 +184,7 @@ def apply_pipeline(config, filename, args=None):
                 "features",
                 engine
             )
-            save_psm_path = "{}/{}/{}/{}.pkl".format(
+            save_psm_path = "{}/{}/{}/{}.parquet".format(
                 config["output_folder"],
                 filename,
                 "psmlist",
@@ -221,7 +232,7 @@ def apply_pipeline(config, filename, args=None):
         save_object(
             psm_list,
             save_psm_path,
-            'pickle'
+            'parquet'
         )
         gc.collect()
 
