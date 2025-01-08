@@ -3,6 +3,7 @@ include { INSTANOVO   } from "./modules/instanovo"
 include { CONTRANOVO  } from "./modules/contranovo"
 include { PEPNET      } from "./modules/pepnet"
 include { NOVOB       } from "./modules/novob"
+include { PIPRIMENOVO } from "./modules/piprimenovo"
 include { SMSNET      } from "./modules/smsnet"       // Not implemented yet
 include { DEEPNOVO    } from "./modules/deepnovo"     // Not implemented yet
 include { POINTNOVO   } from "./modules/pointnovo"    // Not implemented yet
@@ -109,6 +110,19 @@ workflow RUN_TOOLS {
             results_all = results_all.concat(deepnovo_result)
         }
 
+        // PIPRIMENOVO
+        if (params.run_piprimenovo) {
+            config_piprimenovo = Channel.fromPath(params.config_piprimenovo)
+
+            if (params.serialize) {
+                (piprimenovo_result, serializer) = PIPRIMENOVO(mgf_files, serializer, config_piprimenovo.first())
+            }
+            else {
+                (piprimenovo_result, _) = PIPRIMENOVO(mgf_files, serializer, config_piprimenovo.first())
+            }
+            results_all = results_all.concat(piprimenovo_result)
+            
+        }
 
     emit:
         result = results_all
