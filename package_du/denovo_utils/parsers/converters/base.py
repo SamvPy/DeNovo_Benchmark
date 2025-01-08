@@ -79,7 +79,8 @@ class DenovoEngineConverter(Enum):
             self,
             result_path: str,
             mgf_path: str,
-            max_length: int = 30
+            max_length: int = 30,
+            im=False
         ) -> PSMList:
         """
         Parse the results from a specified de novo search engine.
@@ -114,6 +115,7 @@ class DenovoEngineConverter(Enum):
             mapping=mapping,
             max_length=max_length,
             label=self.psm_utils_parser,
+            im=im
         )       
 
     @classmethod

@@ -19,7 +19,7 @@ logging.basicConfig(filename="denovo_output_parsing.log", level=logging.INFO)
 
 
 def contranovo_parser(
-    result_path: str, mgf_path: str, mapping: dict, max_length=30, **kwargs
+    result_path: str, mgf_path: str, mapping: dict, max_length=30, im: bool=False, **kwargs
 ) -> PSMList:
     """
     Return a `PSMList` from a ContraNovo search result and its MGF spectral file.
@@ -44,7 +44,7 @@ def contranovo_parser(
     result_path = os.path.splitext(result_path)[0] + ".mztab"
 
     if mgf_path.lower().endswith('.mzml'):
-        mgf_file = mzml_reader(mgf_path)
+        mgf_file = mzml_reader(mgf_path, im=im)
     else:
         mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
 

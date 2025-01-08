@@ -19,7 +19,7 @@ logging.basicConfig(filename="denovo_output_parsing.log", level=logging.INFO)
 
 
 def casanovo_parser(
-    result_path: str, mgf_path: str, mapping: dict, max_length: int = 30, **kwargs
+    result_path: str, mgf_path: str, mapping: dict, max_length: int = 30, im: bool=False, **kwargs
 ) -> PSMList:
     """
     Return a `PSMList` from a casanovo search result and its associated spectral file.
@@ -49,7 +49,7 @@ def casanovo_parser(
     # of spectra, starting from 0 and going to n for a file with n spectra
     # https://github.com/Noble-Lab/casanovo/issues/309
     if mgf_path.lower().endswith('.mzml'):
-        mgf_file = mzml_reader(mgf_path)
+        mgf_file = mzml_reader(mgf_path, im=im)
         # In mzml format, the indexation with spectra_ref is done with the id (title) part
         mgf_file['index'] = mgf_file['title'].apply(lambda x: int(x.split('scan=')[-1]))
         mgf_file = mgf_file.set_index('index')
@@ -94,6 +94,10 @@ def casanovo_parser(
     )
     joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
 
+    # Check if ion mobility column is present (only when reading mzml files)
+    if "ion_mobility" not in joined_file.columns:
+        joined_file['ion_mobility'] = None
+
     psm_list = joined_file.progress_apply(
         lambda x: PSM(
             peptidoform=x["peptidoform"],
@@ -102,6 +106,7 @@ def casanovo_parser(
             score=x["search_engine_score[1]"],
             precursor_mz=x["precursor_mz"],
             retention_time=x["rtinseconds"]/60,
+            ion_mobility=x['ion_mobility'],
             source=x["search_engine"][0] + x["search_engine"][1],
             metadata={
                 "aa_scores": x["opt_ms_run[1]_aa_scores"],
