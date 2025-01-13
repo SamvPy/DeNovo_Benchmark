@@ -31,14 +31,19 @@ class Run:
                     engines.append(psm.engine_name)
         return f"{len(self.spectra)} spectra loaded from {len(engines)} engines ({engines})."
 
-    def load_data(self, psmlist, is_ground_truth=False, filter_by_gt=True):
+    def load_data(self, psmlist, score_names, is_ground_truth=False, filter_by_gt=True):
 
         for psm_ in psmlist:
             # Only ground truth psms can add a Spectrum object to the run.
             if is_ground_truth:
                 if psm_['is_decoy'] or psm_['qvalue']>.01:
                     continue
-                properties = {"precursor_mz": psm_["precursor_mz"], "retention_time": psm_['retention_time']}
+                properties = {
+                    "precursor_mz": psm_["precursor_mz"],
+                    "retention_time": psm_['retention_time'],
+                    "ion_mobility": psm_['ion_mobility'],
+                    "is_decoy": psm_['is_decoy'],
+                }
                 spectrum = Spectrum(psm_['spectrum_id'], properties=properties)
                 self.add_spectrum(spectrum=spectrum)
 
@@ -80,11 +85,14 @@ class Run:
             )
             
             # Add ms2rescore score if rescored.
-            if 'score_ms2rescore' in psm_['provenance_data'].keys():
+            for score_name in score_names:
+                if score_name not in psm_['provenance_data'].keys():
+                    continue
+
                 psm.scores.add_score(
-                    score=psm_['provenance_data']['score_ms2rescore'],
-                    metadata="ms2rescore",
-                    score_type="peptide"
+                    score=psm_['provenance_data'][score_name],
+                    metadata=score_name,
+                    score_type='peptide'
                 )
 
             spectrum.add_psm(psm, is_ground_truth=is_ground_truth)

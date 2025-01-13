@@ -151,3 +151,40 @@ def plot_gmm_fit(scores: list, gmm_dict: dict, threshold: float):
     plt.legend()
     plt.title('GMM fit with threshold at {:.2f}'.format(threshold))
     plt.show()
+
+
+def plot_score_distribution(run, spectrum_id: str, score_name='score_ms2rescore_features'):
+    spectrum = run.get_spectrum(spectrum_id)
+    
+    ms2rescore_gt = spectrum.psm_gt.scores.get_score(score_name)
+    ms2rescore_candidates = [
+        psm.scores.get_score(score_name) for psm in
+        spectrum.psm_candidates if psm.engine_name in ['Terminal-variant', 'Ambiguous']
+    ]
+
+    candidate_type = [
+        psm.engine_name for psm in spectrum.psm_candidates if psm.engine_name in [
+            'Terminal-variant', 'Ambiguous'
+        ]
+    ]
+
+    engine_output = [
+        psm.scores.get_score(score_name) for psm in 
+        spectrum.psm_candidates if psm.engine_name not in ['Terminal-variant', 'Ambiguous']
+    ]
+
+    sns.histplot(
+        x=ms2rescore_candidates,
+        hue=candidate_type,
+        binwidth=.2,
+        kde=True
+    )
+
+    for engine_score in engine_output:
+        plt.axvline(engine_score, c='g')
+    plt.axvline(ms2rescore_gt, c='r')
+
+    plt.xlim(
+        min([-10]+[ms2rescore_gt]+ms2rescore_candidates),
+        max([10]+[ms2rescore_gt]+ms2rescore_candidates)
+    )
