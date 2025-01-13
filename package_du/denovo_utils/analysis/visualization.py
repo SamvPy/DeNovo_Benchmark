@@ -10,6 +10,7 @@ import spectrum_utils.spectrum as sus
 import numpy as np
 from scipy import stats
 from pyteomics import mgf
+from pyteomics.mzml import PreIndexedMzML
 
 
 def plot_metrics(metrics_dict: dict, title: str) -> None:
@@ -47,9 +48,10 @@ def plot_metrics(metrics_dict: dict, title: str) -> None:
 
 
 def plot_spectrum(
-    mgf_path: str,
+    peak_path: str,
     spectrum_id: str,
     peptide: str,
+    peak_format: str = 'mzml',
     fragment_tol_mass: float = 20,
     fragment_tol_mode: Literal["ppm", "Da"] = "ppm",
     ion_types: str = "by",
@@ -61,7 +63,7 @@ def plot_spectrum(
 
     Parameters
     ----------
-    mgf_path: str
+    peak_path: str
         Path to the mgf file containing the spectrum to plot.
     spectrum_id: str
         The spectrum_id of the spectrum in the mgf file.
@@ -79,17 +81,38 @@ def plot_spectrum(
     MsmsSpectrum
         The annotated mass spectrum in spectrum_utils format.
     """
-    mgf_file = mgf.read(mgf_path)
-    spectrum = mgf_file.get_by_id(spectrum_id)
+    if peak_format=='mzml':
+        mzml_file = PreIndexedMzML(peak_path)
+        spectrum = mzml_file.get_by_id(spectrum_id)
+
+        title = spectrum['id']
+        selected_ion = spectrum['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]
+        precursor_mz = float(selected_ion['selected ion m/z'])
+        retention_time = spectrum['scanList']['scan'][0]['scan start time'] * 60
+        precursor_charge = int(selected_ion['charge state'])
+
+
+    elif peak_format=='mgf':
+        mgf_file = mgf.read(peak_path)
+        spectrum = mgf_file.get_by_id(spectrum_id)
+
+        title = spectrum["params"]["title"]
+        precursor_mz = spectrum["params"]["pepmass"][0]
+        precursor_charge = spectrum["params"]["charge"][0]
+        retention_time = spectrum["params"]["rtinseconds"]
+
+    else:
+        raise Exception('Peak format {} not supported. Only mzml or mgf.'.format(peak_format))
 
     spectrum_su = sus.MsmsSpectrum(
-        identifier=spectrum["params"]["title"],
-        precursor_mz=spectrum["params"]["pepmass"][0],
-        precursor_charge=spectrum["params"]["charge"][0],
+        identifier=title,
+        precursor_mz=precursor_mz,
+        precursor_charge=precursor_charge,
         mz=spectrum["m/z array"],
         intensity=spectrum["intensity array"],
-        retention_time=spectrum["params"]["rtinseconds"],
+        retention_time=retention_time,
     )
+
     spectrum_su = spectrum_su.annotate_proforma(
         proforma_str=peptide,
         fragment_tol_mass=fragment_tol_mass,
