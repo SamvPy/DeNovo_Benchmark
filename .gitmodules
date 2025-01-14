@@ -1,3 +1,6 @@
 [submodule "source_code/pi-PrimeNovo"]
 	path = source_code/pi-PrimeNovo
 	url = https://github.com/SamvPy/pi-PrimeNovo.git
+[submodule "source_code/pi-HelixNovo"]
+	path = source_code/pi-HelixNovo
+	url = https://github.com/SamvPy/pi-HelixNovo.git
