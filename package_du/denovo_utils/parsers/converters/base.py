@@ -16,6 +16,7 @@ from .novor import novor_parser
 from .pepnet import pepnet_parser
 from .pepnovo import pepnovo_parser
 from .pointnovo import pointnovo_parser
+from .piprimenovo import piprimenovo_parser
 from .spectralis import spectralis_parser
 
 # Define supported parsers for de novo search engines as
@@ -48,6 +49,7 @@ class DenovoEngineConverter(Enum):
     NOVOR = ("novor", novor_parser)
     PEPNOVO = ("pepnovo", pepnovo_parser)
     POINTNOVO = ("pointnovo", pointnovo_parser)
+    PIPRIMENOVO = ("piprimenovo", piprimenovo_parser)
     SPECTRALIS = ("spectralis", spectralis_parser)
     PMSUTILS = ("psm-utils", psmutils_parser)
 
@@ -138,6 +140,7 @@ class DenovoEngineConverter(Enum):
             - 'novor'
             - 'pepnovo'
             - 'pointnovo'
+            - 'piprimenovo'
             - 'psm-utils' or any engine supported within psm-utils, e.g. sage.
 
         Returns
