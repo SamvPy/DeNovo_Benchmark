@@ -4,10 +4,10 @@ include { CONTRANOVO  } from "./modules/contranovo"
 include { PEPNET      } from "./modules/pepnet"
 include { NOVOB       } from "./modules/novob"
 include { PIPRIMENOVO } from "./modules/piprimenovo"
+include { PIHELIXNOVO } from "./modules/pihelixnovo"
 include { SMSNET      } from "./modules/smsnet"       // Not implemented yet
 include { DEEPNOVO    } from "./modules/deepnovo"     // Not implemented yet
 include { POINTNOVO   } from "./modules/pointnovo"    // Not implemented yet
-include { PIHELIXNOVO } from "./modules/pihelixnovo"  // Not implemented yet
 include { POWERNOVO   } from "./modules/powernovo"    // Not implemented yet
 
 
@@ -108,6 +108,19 @@ workflow RUN_TOOLS {
                 (deepnovo_result, _) = DEEPNOVO(mgf_files, serializer)
             }
             results_all = results_all.concat(deepnovo_result)
+        }
+
+        // PIHELIXNOVO
+        if (params.run_pihelixnovo) {
+            config_pihelixnovo = Channel.fromPath(params.config_pihelixnovo)
+
+            if (params.serialize) {
+                (pihelixnovo_result, serializer) = PIHELIXNOVO(mgf_files, serializer, config_pihelixnovo.first())
+            }
+            else {
+                (pihelixnovo_result, _) = PIHELIXNOVO(mgf_files, serializer, config_pihelixnovo.first())
+            }
+            results_all = results_all.concat(pihelixnovo_result)
         }
 
         // PIPRIMENOVO
