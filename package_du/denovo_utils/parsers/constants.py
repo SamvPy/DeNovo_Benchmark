@@ -70,6 +70,18 @@ MODIFICATION_MAPPING = {
     },
     "piprimenovo": {
         # N-terminal only
+        "[+43.006-17.027]-": "[+25.980265]-",
+        "[+42.011]-": "[UNIMOD:1]-",  # Acetylation
+        "[+43.006]": "[UNIMOD:5]-",  # 5
+        "[-17.027]": "[UNIMOD:385]-",  # NH3 loss
+        # AA mods:
+        "C[+57.021]": "C[UNIMOD:4]",
+        "M[+15.995]": "M[UNIMOD:35]",  # Met oxidation
+        "N[+0.984]": "N[UNIMOD:7]",  # Asn deamidation
+        "Q[+0.984]": "Q[UNIMOD:7]",  # Gln deamidation
+    },
+    "pihelixnovo": {
+        # N-terminal only
         "+43.006-17.027": "[+25.980265]-",
         "+42.011": "[UNIMOD:1]-",  # Acetylation
         "+43.006": "[UNIMOD:5]-",  # 5
