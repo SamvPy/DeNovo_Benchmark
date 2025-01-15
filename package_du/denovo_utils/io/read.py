@@ -9,6 +9,8 @@ from psm_utils import PSMList
 from ms2rescore.feature_generators import FEATURE_GENERATORS
 from ms2rescore.feature_generators.deeplc import DeepLCFeatureGenerator
 from ms2rescore import parse_configurations
+from tqdm import tqdm
+from itertools import chain
 
 # Handle this somewhere else ? Risk of circular imports
 from peak_pack.annotation.evidence import PeptideEvidence
@@ -113,7 +115,7 @@ def load_psmlist(psm_path) -> PSMList:
     # Reload the peptide_evidence objects
     if ('PE_evidence_labels' in psm_list[0]['metadata'].keys() and
         'PE_evidence' in psm_list[0]['metadata'].keys()):
-        for psm in psm_list:
+        for psm in tqdm(psm_list):
 
             metadata = {}
             for k, v in psm['metadata'].items():
@@ -152,3 +154,16 @@ def load_psmlist_and_features(psm_path, feature_path):
     ]
 
     return psm_list
+
+
+def read_partitions_psmlist(path):
+    psm_list_list = []
+    for p in tqdm(glob(f'{path}/*.parquet')):
+        psm_list_list.append(read_file(p, filetype='parquet'))
+    return PSMList(list(chain(*psm_list_list)))
+
+def read_partitions_features(path):
+    features = []
+    for p in tqdm(glob(f'{path}/*.parquet')):
+        features.append(pd.read_parquet(p))
+    return pd.concat(features).reset_index(drop=True)

@@ -1,6 +1,7 @@
 from typing import Optional, List
 from peak_pack.annotation import PeptideEvidence
 from psm_utils import Peptidoform
+from tqdm import tqdm
 from .psm import PSM
 from .spectrum import Spectrum
 from ..parsers import DenovoEngineConverter
@@ -33,7 +34,7 @@ class Run:
 
     def load_data(self, psmlist, score_names, is_ground_truth=False, filter_by_gt=True):
 
-        for psm_ in psmlist:
+        for psm_ in tqdm(psmlist):
             # Only ground truth psms can add a Spectrum object to the run.
             if is_ground_truth:
                 if psm_['is_decoy'] or psm_['qvalue']>.01:
