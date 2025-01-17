@@ -5,6 +5,7 @@ include { PEPNET      } from "./modules/pepnet"
 include { NOVOB       } from "./modules/novob"
 include { PIPRIMENOVO } from "./modules/piprimenovo"
 include { PIHELIXNOVO } from "./modules/pihelixnovo"
+include { ADANOVO     } from "./modules/adanovo"
 include { SMSNET      } from "./modules/smsnet"       // Not implemented yet
 include { DEEPNOVO    } from "./modules/deepnovo"     // Not implemented yet
 include { POINTNOVO   } from "./modules/pointnovo"    // Not implemented yet
@@ -134,9 +135,20 @@ workflow RUN_TOOLS {
                 (piprimenovo_result, _) = PIPRIMENOVO(mgf_files, serializer, config_piprimenovo.first())
             }
             results_all = results_all.concat(piprimenovo_result)
-            
         }
 
+        // AdaNovo
+        if (params.run_adanovo) {
+            config_adanovo = Channel.fromPath(params.config_adanovo)
+
+            if (params.serialize) {
+                (adanovo_result, serializer) = ADANOVO(mgf_files, serializer, config_adanovo.first())
+            }
+            else {
+                (adanovo_result, _) = ADANOVO(mgf_files, serializer, config_adanovo.first())
+            }
+            results_all = results_all.concat(adanovo_result)
+        }
     emit:
         result = results_all
 }
