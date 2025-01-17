@@ -6,10 +6,10 @@ include { NOVOB       } from "./modules/novob"
 include { PIPRIMENOVO } from "./modules/piprimenovo"
 include { PIHELIXNOVO } from "./modules/pihelixnovo"
 include { ADANOVO     } from "./modules/adanovo"
+include { POWERNOVO   } from "./modules/powernovo"
 include { SMSNET      } from "./modules/smsnet"       // Not implemented yet
 include { DEEPNOVO    } from "./modules/deepnovo"     // Not implemented yet
 include { POINTNOVO   } from "./modules/pointnovo"    // Not implemented yet
-include { POWERNOVO   } from "./modules/powernovo"    // Not implemented yet
 
 
 // This is coded in longform without function as dynamic process invocation didn't seem to work...
@@ -149,6 +149,19 @@ workflow RUN_TOOLS {
             }
             results_all = results_all.concat(adanovo_result)
         }
+
+        // PowerNovo
+        if (params.run_powernovo) {
+            
+            if (params.serialize) {
+                (powernovo_result, serializer) = POWERNOVO(mgf_files, serializer)
+            }
+            else {
+                (powernovo_result, _) = POWERNOVO(mgf_files, serializer)
+            }
+            results_all = results_all.concat(powernovo_result)
+        }
+
     emit:
         result = results_all
 }

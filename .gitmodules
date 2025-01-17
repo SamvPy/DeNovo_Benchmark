@@ -7,3 +7,6 @@
 [submodule "source_code/adanovo_v1"]
 	path = source_code/adanovo_v1
 	url = https://github.com/SamvPy/adanovo_v1.git
+[submodule "source_code/PowerNovo"]
+	path = source_code/PowerNovo
+	url = https://github.com/SamvPy/PowerNovo.git
