@@ -19,6 +19,8 @@ from .pointnovo import pointnovo_parser
 from .piprimenovo import piprimenovo_parser
 from .pihelixnovo import pihelixnovo_parser
 from .spectralis import spectralis_parser
+from .adanovo import adanovo_parser
+from .deepnovo import deepnovo_parser
 
 # Define supported parsers for de novo search engines as
 # an Enum with associated parser functions
@@ -53,7 +55,9 @@ class DenovoEngineConverter(Enum):
     PIPRIMENOVO = ("piprimenovo", piprimenovo_parser)
     PIHELIXNOVO = ("pihelixnovo", pihelixnovo_parser)
     SPECTRALIS = ("spectralis", spectralis_parser)
+    ADANOVO = ("adanovo", adanovo_parser)
     PMSUTILS = ("psm-utils", psmutils_parser)
+    DEEPNOVO = ("deepnovo", deepnovo_parser)
 
     def __init__(self, label: str, parser_func: callable) -> None:
         """

@@ -91,6 +91,24 @@ MODIFICATION_MAPPING = {
         "M+15.995": "M[UNIMOD:35]",  # Met oxidation
         "N+0.984": "N[UNIMOD:7]",  # Asn deamidation
         "Q+0.984": "Q[UNIMOD:7]",  # Gln deamidation
+    },
+    "adanovo": {
+        # N-terminal only
+        "+43.006-17.027": "[+25.980265]-",
+        "+42.011": "[UNIMOD:1]-",
+        "+43.006": "[UNIMOD:5]-",
+        "-17.027": "[UNIMOD:385]-",
+        # AA Mods:
+        "C(+57.02)": "C[UNIMOD:4]",
+        "M(+15.99)": "M[UNIMOD:35]",
+        "N(+.98)": "N[UNIMOD:7]",
+        "Q(+.98)": "Q[UNIMOD:7]",
+    },
+    "deepnovo": {
+        "Cmod": "C[UNIMOD:4]",
+        "Qmod": "Q[UNIMOD:7]",
+        "Nmod": "N[UNIMOD:7]",
+        "Mmod": "M[UNIMOD:35]"
     }
 }
 
@@ -160,6 +178,7 @@ UNSUPPORTED_MODS_INSTANOVO_PLUS = [
 EXTENSIONS = {
     "casanovo": ".mztab",
     "contranovo": ".mztab",
+    "adanovo": ".mztab",
     "instanovo": ".csv",
     "novob": ".tsv",
     "pepnet": ".tsv",
@@ -169,7 +188,10 @@ EXTENSIONS = {
     "percolator": ".pout",
     "sage": ".sage.tsv",
     "spectralis": ".csv",
-    "instanovoplus": ".csv"
+    "instanovoplus": ".csv",
+    "pihelixnovo": ".tsv",
+    "piprimenovo": ".tsv",
+    "deepnovo": ".tsv"
 }
 
 
