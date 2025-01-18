@@ -61,7 +61,7 @@ class PSM:
     def add_peptide_evidence(self, peptide_evidence):
         self.peptide_evidence = peptide_evidence
 
-    def compare(self, psm_gt: 'PSM', metadata_score, refinements=None, tolerance=.02):
+    def compare(self, psm_gt: 'PSM', metadata_score, refinements=None, tolerance=.02, ignore_score=False):
         # Recursively compare the refinements of the base PSM with ground truth
         if refinements is not None:
             for refinement in refinements:
@@ -72,9 +72,14 @@ class PSM:
                     psm.compare(psm_gt, metadata_score)
 
         # Extract the scores associated with the ground-truth and current PSM
-        score = self.scores.get_score(metadata=metadata_score)
-        score_gt = psm_gt.scores.get_score(metadata=metadata_score)
-
+        score = self.scores.get_score(
+            metadata=metadata_score,
+            ignore_missing_score=ignore_score
+        )
+        score_gt = psm_gt.scores.get_score(
+            metadata=metadata_score,
+            ignore_missing_score=ignore_score
+        )
         # Perform the evaluation against a ground-truth
         evaluation = Evaluation(gt_name=psm_gt.engine_name, other_name=self.engine_name)
         evaluation.evaluate(psm_gt, self, score_gt, score)

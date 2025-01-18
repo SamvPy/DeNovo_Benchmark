@@ -31,7 +31,7 @@ class Spectrum:
     def get_psms_by_engine(self, engine_name):
         return [psm for psm in self.psm_candidates if psm.engine_name == engine_name]
     
-    def compare_gt(self, metadata_score, refinements=None):
+    def compare_gt(self, metadata_score, refinements=None, ignore_score=False):
 
         if self.psm_gt is None:
             return
@@ -41,6 +41,7 @@ class Spectrum:
                 psm_gt=self.psm_gt,
                 metadata_score=metadata_score,
                 refinements=refinements,
+                ignore_score=ignore_score
             )
 
     @property

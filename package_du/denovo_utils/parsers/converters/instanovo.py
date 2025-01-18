@@ -128,7 +128,7 @@ def instanovoplus_parser(
                 run=run,
                 score=x["log_probabilities"],
                 precursor_mz=x["precursor_mz"],
-                retention_time=x["rtinseconds"],
+                retention_time=x["rtinseconds"]/60,
                 source="InstaNovo+",
                 metadata={"base_prediction": x["source"]},
             ),

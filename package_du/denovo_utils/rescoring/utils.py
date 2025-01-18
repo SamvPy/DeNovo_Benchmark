@@ -45,7 +45,14 @@ def parse_config_paths(
             logger.warning(f'While parsing paths: No file found at {psm_file_path}')
             continue
         if len(paths) > 1:
-            logger.warning(f'Multiple files matching {psm_file_path}. Taking {paths[0]}.')
+            # Take path with lowest number of characters.
+            # Sometimes a file is generated with feature_names...
+            psm_file_path = paths[0]
+            for p in paths[1:]:
+                if len(p) < len(psm_file_path):
+                    psm_file_path = p
+            paths[0] = psm_file_path
+            logger.warning(f'Multiple files matching {psm_file_path}. Taking {p}.')
         psm_file_path = paths[0]
 
         if not os.path.exists(mgf_path) or not os.path.exists(psm_file_path):

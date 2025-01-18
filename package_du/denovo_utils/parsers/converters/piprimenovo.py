@@ -78,7 +78,7 @@ def piprimenovo_parser(
     # Parse to psm utils type format
     joined_file['peptidoform'] = joined_file.apply(
         lambda x: parse_peptidoform(
-            peptide=f"{x['prediction']}/{x['charge']}",
+            peptide=f"{x['prediction']}/{str(int(x['charge']))}",
             mapping=mapping,
             max_length=max_length
         ),

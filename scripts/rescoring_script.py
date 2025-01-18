@@ -8,11 +8,12 @@ from denovo_utils.io.read import (
     load_configuration,
     load_psmlist_and_features
 )
-from denovo_utils.io.save import save_pickle
+from denovo_utils.io.save import save_pickle, save_features, save_psmlist
 
 from denovo_utils.rescoring.utils import (
     already_trained,
     parse_config_paths,
+    setup_paths
 )
 import gc
 
@@ -38,26 +39,11 @@ def apply_pipeline(config, filename, args=None):
         spectrum_path=config["spectrum_path"]
     )
 
-    save_feature_path = "{}/{}/{}/{}.parquet".format(
-        config["output_folder"],
-        filename,
-        "features",
-        config["ground_truth_engine"]
+    config['save_paths'] = setup_paths(
+        output_folder=config['output_folder'],
+        run_name=os.path.basename(config['psm_file']).split('.')[0],
+        filename='ground_truth'
     )
-    save_psm_path = "{}/{}/{}/ground_truth.{}.parquet".format(
-        config["output_folder"],
-        filename,
-        "psmlist",
-        config["ground_truth_engine"]
-    )
-
-    mokapot_model_folder = "{}/{}/mokapot".format(
-        config["output_folder"],
-        filename
-    )
-    save_mokapot_paths = [
-        os.path.join(mokapot_model_folder, f"mokapot_model_{i}.pkl") for i in range(3)
-    ]
 
     # 0. Initialize rescoring object
     rescorer = DeNovoRescorer(configuration=configuration)
@@ -65,47 +51,47 @@ def apply_pipeline(config, filename, args=None):
     # Check if models were already trained or not.
     # If so, it is pointless to rerun this part again.
     trained = already_trained(
-        save_psm_path,
-        save_feature_path,
-        save_mokapot_paths
+        config['save_paths']['psm_path'],
+        config['save_paths']['feature_path'],
+        config['save_paths']['mokapot_model_paths']
     )
     if trained:
         logging.info(f"Found result paths for {filename} ground truth")
-        psm_list = load_rescorer(
-            rescorer=rescorer,
-            psm_path=save_psm_path,
-            load_deeplc_from_cache="deeplc" not in args["regenerate"],
-            feature_path=save_feature_path,
-            mokapot_folder=mokapot_model_folder
+        rescorer.load(
+            calibration_folder=config['save_paths']['calibration_folder'],
+            mokapot_folder=config['save_paths']['mokapot_model_folder']
         )
+
+        parser = DenovoEngineConverter.select(config["ground_truth_engine"])
+        psm_list = parser.parse(
+            result_path=config["psm_file"],
+            mgf_path=config["spectrum_path"]
+        )
+        psm_list = psm_list.get_rank1_psms()
 
         if len(args["regenerate"]) > 0:
             logging.info(f"Regenerating {args['regenerate']} features.")
             rescorer.add_features(psm_list=psm_list, feature_types=args['regenerate'])
 
-
         if args['retrain_mokapot']:
             logging.info("Training mokapot models")
             logging.info(f"Retrain mokapot and rescore ground-truth. {len(psm_list)} psms")
-            rescorer.train_mokapot_models(psm_list, save_folder=mokapot_model_folder)
+            rescorer.train_mokapot_models(psm_list, save_folder=config['save_paths']['mokapot_model_folder'])
             rescorer.rescore(psm_list)
-            psm_features = psm_list.to_dataframe()[["spectrum_id", "run", "source", "rescoring_features"]]
-            psm_features.to_parquet(save_feature_path)
-            psm_list["rescoring_features"] = [{} for i, _ in enumerate(psm_list)]
-            
-            save_object(
+
+            save_features(
                 psm_list,
-                save_psm_path,
-                'parquet'
+                config['save_paths']['feature_path']
+            )            
+            save_psmlist(
+                psm_list,
+                config['save_paths']['psm_path']
             )
     
     else:
         # 1. Load the ground-truth dataset
         logging.info(f"No mokapot models, rescored psm_list or fgen file found for {filename}")
         logging.info("Reading ground-truth data")
-        os.makedirs(mokapot_model_folder, exist_ok=True)
-        os.makedirs(os.path.dirname(save_feature_path), exist_ok=True)
-        os.makedirs(os.path.basename(save_psm_path), exist_ok=True)
 
         parser = DenovoEngineConverter.select(config["ground_truth_engine"])
         psm_list = parser.parse(
@@ -117,18 +103,12 @@ def apply_pipeline(config, filename, args=None):
         # 2. Preprocess the psm_list for rescoring
         psm_list = rescorer.preprocess_psm_list(psm_list)
 
-        # 3.1 Set up the deeplc model by transfer learning
-        logging.info("Retraining DeepLC")
-        rescorer.retrain_deeplc(
-            psm_list,
-            save_model_folder=mokapot_model_folder
-        )
-
-        # 3.2 Set up IM2Deep calibration dataframe
-        logging.info('Creating calibration dataframe for IM2Deep.')
-        rescorer.get_im2deep_calibration_df(
+        # 3. Calibrate feature generators
+        logging.info("Calibrating feature generators...")
+        rescorer.calibrate_fgens(
             psm_list=psm_list,
-            save_model_folder=mokapot_model_folder
+            calibration_folder=config['save_paths']['calibration_folder'],
+            from_cache=False
         )
 
         # 4. Generate features for x psm_lists
@@ -139,22 +119,22 @@ def apply_pipeline(config, filename, args=None):
         logging.info("Training mokapot models")
         rescorer.train_mokapot_models(
             psm_list,
-            save_folder=mokapot_model_folder
+            save_folder=config['save_paths']['mokapot_model_folder']
         )
 
         # 6. Apply the mokapot models for psm-scoring on the ground truth
         logging.info(f"Rescoring ground-truth. {len(psm_list)} psms")
         rescorer.rescore(psm_list)
 
-        psm_features = psm_list.to_dataframe()[["spectrum_id", "rank", "run", "source", "rescoring_features"]]
-        psm_features.to_parquet(save_feature_path)
-        psm_list["rescoring_features"] = [{} for i, _ in enumerate(psm_list)]
-        
-        save_object(
+        save_features(
             psm_list,
-            save_psm_path,
-            'parquet'
+            config['save_paths']['feature_path']
+        )            
+        save_psmlist(
+            psm_list,
+            config['save_paths']['psm_path']
         )
+
 
     # 7. Apply the trained fgens and mokapot model on the denovo PSMS
     for engine, path in config["denovo"].items():
@@ -162,7 +142,7 @@ def apply_pipeline(config, filename, args=None):
         # Add refiner token to the filename if required
         base_denovo = "base"
         if engine.startswith('spectralis') or engine.startswith("instanovoplus"):
-            engine, base_denovo =  engine.split("__")
+            engine, base_denovo = engine.split("__")
             save_feature_path = "{}/{}/{}/{}.{}.parquet".format(
                 config["output_folder"],
                 filename,
@@ -198,13 +178,13 @@ def apply_pipeline(config, filename, args=None):
             
             if len(args["regenerate"]) > 0:
                 logging.info(f"Regenerating {args['regenerate']} features.")
-                psm_list = load_psm_features(psm_path=save_psm_path, feature_path=save_feature_path)
+                psm_list = load_psmlist_and_features(psm_path=save_psm_path, feature_path=save_feature_path)
                 rescorer.add_features(psm_list=psm_list, feature_types=args['regenerate'])
             elif not args['retrain_mokapot']:
                 logging.info(f"Skipping {filename}:{engine}-{base_denovo} rescoring. {save_psm_path} exists.")
                 continue
             else:
-                psm_list = load_psm_features(psm_path=save_psm_path, feature_path=save_feature_path)
+                psm_list = load_psmlist_and_features(psm_path=save_psm_path, feature_path=save_feature_path)
             logging.info(f"Loaded {filename} from {os.path.dirname(save_psm_path)}")
 
         else:
@@ -225,14 +205,13 @@ def apply_pipeline(config, filename, args=None):
         rescorer.rescore(psm_list, denovo=True)
 
         # 7.4 Split and save the PSMList in two distinct parts
-        psm_features = psm_list.to_dataframe()[["spectrum_id", "run", "source", "rescoring_features"]]
-        psm_features.to_parquet(save_feature_path)
-        psm_list["rescoring_features"] = [{} for i, _ in enumerate(psm_list)]
-
-        save_object(
+        save_features(
             psm_list,
-            save_psm_path,
-            'parquet'
+            save_feature_path
+        )            
+        save_psmlist(
+            psm_list,
+            save_psm_path + '.parquet'
         )
         gc.collect()
 
@@ -265,7 +244,6 @@ def main(args):
             args=args
         )
         apply_pipeline(config, filename, args=args)
-
 
 
 def load_config(config_path):

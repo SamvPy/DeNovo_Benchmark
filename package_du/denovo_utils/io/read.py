@@ -129,7 +129,13 @@ def load_psmlist(psm_path) -> PSMList:
                 evidence_labels=eval(psm['metadata']['PE_evidence_labels']),
                 evidence=eval(psm['metadata']['PE_evidence'])
             )
-            provenance_data = {k: eval(v) for k, v in psm['provenance_data'].items()}
+            provenance_data = {}
+            for k, v in psm['provenance_data'].items():
+                try:
+                    v = eval(v)
+                except:
+                    v = v
+                provenance_data[k] = v
 
             psm['metadata'] = metadata
             psm['provenance_data'] = provenance_data
