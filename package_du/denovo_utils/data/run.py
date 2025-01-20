@@ -142,7 +142,7 @@ class Run:
             if 'score_ms2rescore' in psm_['provenance_data'].keys():
                 psm.scores.add_score(
                     score=psm_['provenance_data']['score_ms2rescore'],
-                    metadata='ms2rescore',
+                    metadata='score_ms2rescore',
                     score_type='peptide'
                 )
         
@@ -150,8 +150,12 @@ class Run:
             
             # Spectralis also rescores original identification. Add this to score object.
             if psm_["source"] == "Spectralis":
+                try:
+                    init_score = eval(psm_['provenance_data']['init_score_spectralis'])
+                except TypeError:
+                    init_score = psm_["provenance_data"]["init_score_spectralis"]
                 psm_base.scores.add_score(
-                    score=eval(psm_["provenance_data"]["init_score_spectralis"]),
+                    score=init_score,
                     metadata="Spectralis",
                     score_type="peptide",
                     overwrite=True
@@ -166,7 +170,7 @@ class Run:
         return self.spectra.get(spectrum_id, None)
     
     def get_correct_spectra(self, engines=[], correctness='match', score_metadata="ms2rescore", exclusive=False) -> 'Run':
-        correctness_order = ['match', 'isobaric_aa', 'isobaric_peak', 'Higher score', "Lower score"]
+        correctness_order = ['match', 'isobaric_aa', 'isobaric_peak', 'Higher score', "Lower score", "Different"]
         correctness_index = correctness_order.index(correctness)
 
         spectra_dict = {}

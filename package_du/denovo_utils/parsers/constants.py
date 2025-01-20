@@ -72,8 +72,8 @@ MODIFICATION_MAPPING = {
         # N-terminal only
         "[+43.006-17.027]-": "[+25.980265]-",
         "[+42.011]-": "[UNIMOD:1]-",  # Acetylation
-        "[+43.006]": "[UNIMOD:5]-",  # 5
-        "[-17.027]": "[UNIMOD:385]-",  # NH3 loss
+        "[+43.006]-": "[UNIMOD:5]-",  # 5
+        "[-17.027]-": "[UNIMOD:385]-",  # NH3 loss
         # AA mods:
         "C[+57.021]": "C[UNIMOD:4]",
         "M[+15.995]": "M[UNIMOD:35]",  # Met oxidation

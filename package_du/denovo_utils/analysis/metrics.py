@@ -660,7 +660,7 @@ def plot_precision_recall_refinement(
         denovo_name: "solid",
         "InstaNovo+": "solid",
         "Spectralis": "dashdot",
-        "ms2rescore": "dotted"
+        "score_ms2rescore": "dotted"
     }
 
     # Create figure and axis

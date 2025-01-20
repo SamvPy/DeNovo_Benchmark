@@ -211,7 +211,7 @@ def apply_pipeline(config, filename, args=None):
         )            
         save_psmlist(
             psm_list,
-            save_psm_path + '.parquet'
+            save_psm_path
         )
         gc.collect()
 
