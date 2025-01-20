@@ -5,6 +5,7 @@ process INSTANOVO_PLUS_PARSER {
 
     input:
         tuple path(mgf_file), path(result_files)
+        val engine
 
     output:
         path "${mgf_file.baseName}.feather"  // Parsed instanovo_plus input file
@@ -14,7 +15,7 @@ process INSTANOVO_PLUS_PARSER {
         """
         python -m denovo_utils.parsers.scripts.instanovoplus_input \\
             -m $mgf_file \\
-            -d ${params.denovo_engine}
+            -d ${engine}
         """
 
 }

@@ -31,7 +31,7 @@ workflow instanovoplus_workflow {
 
     main:
         mgf_result_map = matchFiles(mgf_files, result_files)
-        (result_file_parsed, mapping_file) = INSTANOVO_PLUS_PARSER(mgf_result_map)
+        (result_file_parsed, mapping_file) = INSTANOVO_PLUS_PARSER(mgf_result_map, engine)
         INSTANOVO_PLUS(result_file_parsed, mapping_file, engine)
     
     emit:
