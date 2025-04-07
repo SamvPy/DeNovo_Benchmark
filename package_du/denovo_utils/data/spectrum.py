@@ -21,6 +21,9 @@ class Spectrum:
                 psm_candidate.scores
             )
         return str_repr
+    
+    def __len__(self):
+        return len(self.psm_candidates)
 
     def add_psm(self, psm: PSM, is_ground_truth=False):
         if is_ground_truth:

@@ -162,14 +162,14 @@ def load_psmlist_and_features(psm_path, feature_path):
     return psm_list
 
 
-def read_partitions_psmlist(path):
+def read_partitions_psmlist(path, prefix_filename):
     psm_list_list = []
-    for p in tqdm(glob(f'{path}/*.parquet')):
+    for p in tqdm(glob(f'{path}/{prefix_filename}*.parquet')):
         psm_list_list.append(read_file(p, filetype='parquet'))
-    return PSMList(list(chain(*psm_list_list)))
+    return PSMList(psm_list=list(chain(*psm_list_list)))
 
-def read_partitions_features(path):
+def read_partitions_features(path, prefix_filename):
     features = []
-    for p in tqdm(glob(f'{path}/*.parquet')):
+    for p in tqdm(glob(f'{path}/{prefix_filename}*.parquet')):
         features.append(pd.read_parquet(p))
     return pd.concat(features).reset_index(drop=True)

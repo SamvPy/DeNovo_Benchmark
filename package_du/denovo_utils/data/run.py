@@ -32,18 +32,28 @@ class Run:
                     engines.append(psm.engine_name)
         return f"{len(self.spectra)} spectra loaded from {len(engines)} engines ({engines})."
 
-    def load_data(self, psmlist, score_names, is_ground_truth=False, filter_by_gt=True):
+    def __len__(self):
+        return len(self.spectra)
+
+    def load_data(self, psmlist, score_names, is_ground_truth=False, filter_by_gt=True, filter_decoys=True):
 
         for psm_ in tqdm(psmlist):
             # Only ground truth psms can add a Spectrum object to the run.
             if is_ground_truth:
+                
                 if psm_['is_decoy'] or psm_['qvalue']>.01:
-                    continue
+                    if filter_decoys:
+                        continue
+                    else:
+                        psm_type = 'rejected'
+                else:
+                    psm_type = 'accepted'
                 properties = {
                     "precursor_mz": psm_["precursor_mz"],
                     "retention_time": psm_['retention_time'],
                     "ion_mobility": psm_['ion_mobility'],
                     "is_decoy": psm_['is_decoy'],
+                    "psm_type": psm_type
                 }
                 spectrum = Spectrum(psm_['spectrum_id'], properties=properties)
                 self.add_spectrum(spectrum=spectrum)
@@ -205,7 +215,6 @@ class Run:
         spectra_dict = {}
         for spectrum_id, spectra in self.spectra.items():
             psms = []
-            
             
             psm = spectra.get_psms_by_engine(engine_name=engine)
             if len(psm)==0:
