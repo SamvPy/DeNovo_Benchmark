@@ -62,10 +62,9 @@ def apply_pipeline(config, filename, args=None):
             mokapot_folder=config['save_paths']['mokapot_model_folder']
         )
 
-        parser = DenovoEngineConverter.select(config["ground_truth_engine"])
-        psm_list = parser.parse(
-            result_path=config["psm_file"],
-            mgf_path=config["spectrum_path"]
+        psm_list = load_psmlist_and_features(
+            psm_path=config['save_paths']['psm_path'],
+            feature_path=config['save_paths']['feature_path']
         )
         psm_list = psm_list.get_rank1_psms()
 
@@ -196,23 +195,34 @@ def apply_pipeline(config, filename, args=None):
             )
             
             # 7.2 Preprocess denovo dataset
-            logging.info(f"Adding features for {engine}:{filename}")
-            psm_list = rescorer.preprocess_psm_list(psm_list, denovo=True)
-            rescorer.add_features(psm_list)
+            if not args['batches']:
+                logging.info(f"Adding features for {engine}:{filename}")
+                psm_list = rescorer.preprocess_psm_list(psm_list, denovo=True)
+                rescorer.add_features(psm_list)
 
-        # 7.3 Rescore de novo sequences
-        logging.info(f"Rescoring for {engine}:{filename}. {len(psm_list)} psms")
-        rescorer.rescore(psm_list, denovo=True)
+        if args['batches']:
+            rescorer.batched_fgen_and_rescore(
+                psm_list=psm_list,
+                n_psms=10000,
+                denovo=True,
+                save_folder=os.path.dirname(os.path.dirname(save_feature_path)),
+                filename=os.path.basename(save_feature_path.split('.')[0])
+            )
 
-        # 7.4 Split and save the PSMList in two distinct parts
-        save_features(
-            psm_list,
-            save_feature_path
-        )            
-        save_psmlist(
-            psm_list,
-            save_psm_path
-        )
+        else:
+            # 7.3 Rescore de novo sequences
+            logging.info(f"Rescoring for {engine}:{filename}. {len(psm_list)} psms")
+            rescorer.rescore(psm_list, denovo=True)
+
+            # 7.4 Split and save the PSMList in two distinct parts
+            save_features(
+                psm_list,
+                save_feature_path
+            )            
+            save_psmlist(
+                psm_list,
+                save_psm_path
+            )
         gc.collect()
 
 def complete_config(config, args):
@@ -283,6 +293,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-f", "--filename", default=None, help="Specify filename of only one file should be processed"
+    )
+    parser.add_argument(
+        "-b", "--batches", default=False, help='Whether to perform rescoring of de novo results in batches.'
     )
 
     args = parser.parse_args()
