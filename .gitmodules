@@ -10,3 +10,6 @@
 [submodule "source_code/PowerNovo"]
 	path = source_code/PowerNovo
 	url = https://github.com/SamvPy/PowerNovo.git
+[submodule "source_code/ms2rescore"]
+	path = source_code/ms2rescore
+	url = https://github.com/SamvPy/ms2rescore.git
