@@ -31,6 +31,21 @@ class Spectrum:
         else:
             self.psm_candidates.append(psm)
     
+    def rerank(self, score_name, engines):
+
+        rank_dict = {}
+        for psm in self.psm_candidates:
+            if psm.engine_name in engines:
+                rank_dict[psm] = psm.scores.get_score(score_name)
+        
+        rank_dict = {
+            psm: score for psm, score in sorted(rank_dict.items(), key=lambda item: item[1])
+        }
+
+        for i, psm in enumerate(rank_dict.keys()):
+            psm['metadata']['previous_rank'] = psm['rank']
+            psm['rank'] = 1
+
     def get_psms_by_engine(self, engine_name):
         return [psm for psm in self.psm_candidates if psm.engine_name == engine_name]
     
