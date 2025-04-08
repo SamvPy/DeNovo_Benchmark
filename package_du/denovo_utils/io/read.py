@@ -45,11 +45,24 @@ def load_deeplc(
     
     calibration_params = load_pickle(path=calibration_path)
     deeplc_kwargs = {"path_model": model_paths}
+
+    assert len(model_paths) == 1
+
     deeplc_kwargs.update(calibration_params)
     deeplc_fgen = FEATURE_GENERATORS["deeplc"](**deeplc_kwargs)
     deeplc_fgen.deeplc_predictor.calibrate_dict = deeplc_kwargs['calibrate_dict']
     deeplc_fgen.deeplc_predictor.calibrate_min = deeplc_kwargs['calibrate_min']
     deeplc_fgen.deeplc_predictor.calibrate_max = deeplc_kwargs['calibrate_max']
+
+    deeplc_fgen.deeplc_predictor.calibrate_dict[model_paths[0]] = deeplc_kwargs['calibrate_dict'][
+        list(deeplc_kwargs['calibrate_dict'].keys())[0]
+    ]
+    deeplc_fgen.deeplc_predictor.calibrate_min[model_paths[0]] = deeplc_kwargs['calibrate_min'][
+        list(deeplc_kwargs['calibrate_min'].keys())[0]
+    ]
+    deeplc_fgen.deeplc_predictor.calibrate_max[model_paths[0]] = deeplc_kwargs['calibrate_max'][
+        list(deeplc_kwargs['calibrate_max'].keys())[0]
+    ]
 
     logging.info(f"Loaded DeepLC models: {deeplc_fgen.deeplc_predictor.model}")
     logging.info(f"Loaded calibration sets at {calibration_path}")
