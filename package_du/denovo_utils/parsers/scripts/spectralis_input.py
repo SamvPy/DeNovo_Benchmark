@@ -1,6 +1,8 @@
 import argparse
 import os
 
+import numpy as np
+
 from ..constants import EXTENSIONS, MODIFICATION_MAPPING_TO_SPECTRALIS
 from ..converters import DenovoEngineConverter
 from ..io import MGFWriter, psmlist_to_mgf
@@ -24,24 +26,63 @@ def main(args):
     # Set up variables
     filename = os.path.basename(args.mgf_path).split(".")[0]
 
-    # Set up writer
-    writer = MGFWriter(
-        mgf_path=args.mgf_path,
-        modification_mapping=MODIFICATION_MAPPING_TO_SPECTRALIS,
-        output_folder=args.output_folder,
-    )
+    # Read in results first and split by psm candidate rank.
+    if args.batches:
+        for denovo_engine, extension in engine_extension.items():
+            
+            parser = DenovoEngineConverter.select(denovo_engine)
+            results = parser.parse(
+                result_path=os.path.join(
+                    args.result_path, denovo_engine, filename + f".{denovo_engine}" + extension
+                ),
+                mgf_path=args.mgf_path
+            )
+            results_by_rank = {}
 
-    # Read in results in the writer
-    for denovo_engine, extension in engine_extension.items():
-        writer.read_result(
-            result_path=os.path.join(
-                args.result_path, denovo_engine, filename + f".{denovo_engine}" + extension
-            ),
-            denovo_engine=denovo_engine,
+            ranks = results['rank']
+            for rank in np.unique(ranks):
+                results_by_rank[rank] = results[ranks==rank]
+
+            for rank, psmlist in results_by_rank.items():
+                # Init writer
+                writer = MGFWriter(
+                    mgf_path=args.mgf_path,
+                    modification_mapping=MODIFICATION_MAPPING_TO_SPECTRALIS,
+                    output_folder=args.output_folder
+                )
+
+                # Load results
+                writer.load_result(psmlist=psmlist, denovo_engine=denovo_engine)
+
+                # Parse
+                writer.merge()
+
+                # Out
+                out_filename = writer.filename + f'_{rank}.spectralis.mgf'
+                writer.write(out_filename=out_filename)
+
+    # Write all results in a single mgf file. MGF can become extremely big.
+    else:
+        # Set up writer
+        writer = MGFWriter(
+            mgf_path=args.mgf_path,
+            modification_mapping=MODIFICATION_MAPPING_TO_SPECTRALIS,
+            output_folder=args.output_folder,
         )
 
-    writer.merge()
-    writer.write()
+        # Read in results in the writer
+        for denovo_engine, extension in engine_extension.items():
+            writer.read_result(
+                result_path=os.path.join(
+                    args.result_path, denovo_engine, filename + f".{denovo_engine}" + extension
+                ),
+                denovo_engine=denovo_engine,
+            )
+
+        writer.merge()
+
+        out_filename = writer.filename + f'.spectralis.mgf'
+        writer.write(out_filename=out_filename)
 
     # denovo_engine = DenovoEngineConverter.select(label=args.denovo_engine)
     # psmlist = denovo_engine.parse(
@@ -80,6 +121,13 @@ if __name__ == "__main__":
         nargs="+",
         help="The denovo engine used to generate the files search result file.",
     )
+    parser.add_argument(
+        "-b",
+        "--batches",
+        default=True,
+        help="If set to True, separate MGF-files will be created for each engine and psm-rank."
+    )
+
     parser.add_argument(
         "-o",
         "--output_folder",

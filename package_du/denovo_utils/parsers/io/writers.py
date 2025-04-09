@@ -105,6 +105,9 @@ class MGFWriter:
         psmlist = parser.parse(result_path=result_path, mgf_path=self.mgf_path)
         self.results[denovo_engine] = psmlist
 
+    def load_result(self, psmlist: PSMList, denovo_engine: str) -> None:
+        self.results[denovo_engine] = psmlist
+
     def merge(self, parse=True):
         """
         Merge the results of the de novo search engines and parse for writing if required.
@@ -134,7 +137,7 @@ class MGFWriter:
     def mgf_file(self):
         return mgf.read(self.mgf_path)
 
-    def write(self):
+    def write(self, out_filename):
 
         if not hasattr(self, "results") and not self.parsed:
             raise AttributeError(
@@ -164,11 +167,15 @@ class MGFWriter:
                 spectrum_new["params"]["scans"] = entry["title"]
                 mgf_annotated.append(spectrum_new)
 
+        logging.info('Writing MGF: {}'.format(
+            os.path.join(self.output_folder, out_filename)
+            ))
         mgf.write(
             spectra=mgf_annotated,
-            output=os.path.join(self.output_folder, self.filename + "_annotated.mgf"),
+            output=os.path.join(self.output_folder, out_filename),
             header=self.mgf_file.header,
         )
+        logging.info('Succesfully written MGF-file.')
 
 
 def parse_title(spectrum: dict):

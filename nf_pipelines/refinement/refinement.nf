@@ -47,7 +47,7 @@ process INSTANOVO_PLUS {
 process SPECTRALIS_PARSER {
     conda "${params.conda_env_dir}/denovo_analysis_env"
     maxForks 1
-    tag "Creating annotated mgf-file for Spectralis for ${mgf_file.baseName}"
+    tag "Creating annotated mgf-file(s) for Spectralis for ${mgf_file.baseName}"
 
     input:
         // path mgf_file
@@ -55,7 +55,7 @@ process SPECTRALIS_PARSER {
         val engine
 
     output:
-        path "${mgf_file.baseName}_annotated.mgf"
+        tuple val(engine), path("*.spectralis.mgf")
 
     script:
         // denovo_engines = params.denovo_engines.join(' ')
@@ -76,8 +76,7 @@ process SPECTRALIS {
         "${mgf_file.baseName}_${mode}.csv"}, pattern: "${mgf_file.baseName}_${mode}.csv"
     
     input:
-        path mgf_file
-        val engine
+        tuple path(mgf_file), val(engine)
         val mode
 
     output:

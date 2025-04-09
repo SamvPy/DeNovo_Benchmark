@@ -5,7 +5,7 @@ include { INSTANOVO_PLUS                     } from "./refinement"
 include { INSTANOVO_PLUS_PARSER              } from "./refinement"
 include { matchFiles                         } from "../utils/utility_fn"
 
-workflow spectralis_workflow {
+workflow spectralis_rescoring_workflow {
     take:
         engine
         mgf_files
@@ -14,13 +14,54 @@ workflow spectralis_workflow {
     main:
         mgf_result_map = matchFiles(mgf_files, result_files)
         mgf_annotated = SPECTRALIS_PARSER(mgf_result_map, engine)
-        SPECTRALIS_EA(mgf_annotated, engine, 'ea')
-        // The EA also reports the original scores.
-        // SPECTRALIS_RESCORING(mgf_annotated, engine, 'rescoring')
+
+        rescoring_input = mgf_annotated.flatMap { engine, mgf_list -> 
+            mgf_list.collect { mgf -> tuple( mgf, engine, 'rescoring') }
+        }
+        SPECTRALIS_RESCORING(rescoring_input, 'rescoring')
+          
+    emit:
+        spectralis_processed = SPECTRALIS_RESCORING.out
+}
+
+workflow spectralis_ea_workflow {
+    take:
+        engine
+        mgf_files
+        result_files
+
+    main:
+        mgf_result_map = matchFiles(mgf_files, result_files)
+        mgf_annotated = SPECTRALIS_PARSER(mgf_result_map, engine)
+
+        rescoring_input = mgf_annotated.flatMap { engine, mgf_list -> 
+            mgf_list.collect { mgf -> tuple( mgf, engine, 'ea') }
+        }
+        SPECTRALIS_EA(rescoring_input, 'ea')
+             
     
     emit:
-        spectralis_ea = SPECTRALIS_EA.out
-        // spectralis_rescoring = SPECTRALIS_RESCORING.out
+        spectralis_processed = SPECTRALIS_EA.out
+}
+
+workflow spectralis_workflow {
+    take:
+        engine
+        mgf_files
+        result_files
+
+    main:
+        if (params.spectralis_mode == 'ea') {
+            spectralis_ea_workflow(engine, mgf_files, result_files)
+        }
+        else if (params.spectralis_mode == 'rescoring') {
+            spectralis_rescoring_workflow(engine, mgf_files, result_files)
+        }
+
+    emit:
+        spectralis_processed = (params.spectralis_mode == 'ea')            \
+            ? spectralis_ea_workflow.out.spectralis_processed               \
+            : spectralis_rescoring_workflow.out.spectralis_processed
 }
 
 workflow instanovoplus_workflow {
@@ -48,12 +89,17 @@ workflow refinement_workflow {
         if (params.run_instanovoplus) {
             instanovoplus_workflow(engine, mgf_files, result_files)
         }
+
         if (params.run_spectralis) {
             spectralis_workflow(engine, mgf_files, result_files)
         }
 
     emit:
-        // spectralis_ea = spectralis_workflow.out.spectralis_ea
-        // spectralis_rescoring = spectralis_workflow.out.spectralis_rescoring
-        instanovoplus_output = instanovoplus_workflow.out.instanovoplus_output
+        spectralis_rescoring = params.run_spectralis                 \
+            ? spectralis_workflow.out.spectralis_processed                    \
+            : null
+
+        instanovoplus_output = params.run_instanovoplus              \
+            ? instanovoplus_workflow.out.instanovoplus_output                     \
+            : null
 }
