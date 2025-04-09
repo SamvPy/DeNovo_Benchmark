@@ -84,12 +84,17 @@ def contranovo_parser(
     )
     joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
 
+    joined_file['rank'] = joined_file.groupby('title')['search_engine_score[1]'].rank(
+        ascending=False, method='dense'
+    )
+
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(
                 peptidoform=x["peptidoform"],
                 spectrum_id=x["title"],
                 run=run,
+                rank=x['rank'],
                 score=x["search_engine_score[1]"],
                 precursor_mz=x["precursor_mz"],
                 retention_time=x["rtinseconds"]/60,

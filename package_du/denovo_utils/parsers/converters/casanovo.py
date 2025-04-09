@@ -98,11 +98,16 @@ def casanovo_parser(
     if "ion_mobility" not in joined_file.columns:
         joined_file['ion_mobility'] = None
 
+    joined_file['rank'] = joined_file.groupby('title')['search_engine_score[1]'].rank(
+        ascending=False, method='dense'
+    )
+
     psm_list = joined_file.progress_apply(
         lambda x: PSM(
             peptidoform=x["peptidoform"],
             spectrum_id=x["title"],
             run=run,
+            rank=x['rank'],
             score=x["search_engine_score[1]"],
             precursor_mz=x["precursor_mz"],
             retention_time=x["rtinseconds"]/60,

@@ -66,12 +66,17 @@ def deepnovo_parser(
     )
     joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
 
+    joined_file['rank'] = joined_file.groupby('title')['output_score'].rank(
+        ascending=False, method='dense'
+    )
+
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(
                 peptidoform=x["peptidoform"],
                 spectrum_id=x["title"],
                 run=run,
+                rank=x['rank'],
                 score=x["output_score"],
                 precursor_mz=x["precursor_mz"],
                 retention_time=x["rtinseconds"]/60,
