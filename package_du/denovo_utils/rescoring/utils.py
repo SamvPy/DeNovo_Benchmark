@@ -2,6 +2,9 @@ import os
 from glob import glob
 import logging
 
+import numpy as np
+from psm_utils import PSMList
+
 from ..parsers.constants import EXTENSIONS
 
 logger = logging.getLogger(__name__)
@@ -155,3 +158,23 @@ def setup_paths(output_folder, run_name, filename):
         'mokapot_model_paths': save_mokapot_paths,
         'calibration_folder': calibration_folder
     }
+
+def filter_spectra_by_ids(psm_list, spectrum_id_list):
+    n_before = len(psm_list)
+    logging.info('Filtering spectra based on ground-truth labels...')
+
+    spectrum_ids = psm_list['spectrum_id']
+
+    psm_list = psm_list[
+        np.in1d(
+            spectrum_ids,
+            spectrum_id_list
+        )
+    ]
+
+    n_after = len(psm_list)
+    logging.info('Filtered {} PSMs from spectrum_id_list. {} PSMs remaining.'.format(
+        n_before-n_after,
+        n_after
+    ))
+    return psm_list

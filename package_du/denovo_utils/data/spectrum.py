@@ -1,4 +1,5 @@
 from typing import List, Optional, Union
+import numpy as np
 from .psm import PSM
 
 class Spectrum:
@@ -33,18 +34,19 @@ class Spectrum:
     
     def rerank(self, score_name, engines):
 
-        rank_dict = {}
+        psms = []
+        scores = []
+
         for psm in self.psm_candidates:
             if psm.engine_name in engines:
-                rank_dict[psm] = psm.scores.get_score(score_name)
+                scores.append(-psm.scores.get_score(score_name))
+                psms.append(psm)
         
-        rank_dict = {
-            psm: score for psm, score in sorted(rank_dict.items(), key=lambda item: item[1])
-        }
+        order_idx = np.argsort(scores)
 
-        for i, psm in enumerate(rank_dict.keys()):
-            psm['metadata']['previous_rank'] = psm['rank']
-            psm['rank'] = 1
+        for i, order_id in enumerate(order_idx):
+            psms[order_id].rank = i
+            psms[order_id].metadata['previous_rank'] = psm.rank
 
     def get_psms_by_engine(self, engine_name):
         return [psm for psm in self.psm_candidates if psm.engine_name == engine_name]

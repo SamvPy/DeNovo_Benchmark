@@ -13,7 +13,8 @@ from denovo_utils.io.save import save_pickle, save_features, save_psmlist
 from denovo_utils.rescoring.utils import (
     already_trained,
     parse_config_paths,
-    setup_paths
+    setup_paths,
+    filter_spectra_by_ids
 )
 import gc
 
@@ -134,6 +135,8 @@ def apply_pipeline(config, filename, args=None):
             config['save_paths']['psm_path']
         )
 
+    # Keep track of the spectrum_ids for the ground-truth dataset.
+    spectrum_ids_gt = psm_list['spectrum_id']
 
     # 7. Apply the trained fgens and mokapot model on the denovo PSMS
     for engine, path in config["denovo"].items():
@@ -186,6 +189,7 @@ def apply_pipeline(config, filename, args=None):
                 psm_list = load_psmlist_and_features(psm_path=save_psm_path, feature_path=save_feature_path)
             logging.info(f"Loaded {filename} from {os.path.dirname(save_psm_path)}")
 
+        # Run this part if no rescored psmlist and features for the denovo psms are stored in save paths.
         else:
             logging.info(f"Loading {filename} from raw search results.")
             parser = DenovoEngineConverter.select(engine)
@@ -194,6 +198,13 @@ def apply_pipeline(config, filename, args=None):
                 mgf_path=config["spectrum_path"]
             )
             
+            # Filter out spectra which cannot be compared to ground-truth. Saves computation time
+            if args['only_gt_spectra']:
+                psm_list = filter_spectra_by_ids(
+                    psm_list=psm_list,
+                    spectrum_id_list=spectrum_ids_gt
+                )
+
             # 7.2 Preprocess denovo dataset
             if not args['batches']:
                 logging.info(f"Adding features for {engine}:{filename}")
