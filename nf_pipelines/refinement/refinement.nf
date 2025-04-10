@@ -61,7 +61,7 @@ process SPECTRALIS_PARSER {
         // denovo_engines = params.denovo_engines.join(' ')
         """
         python -m denovo_utils.parsers.scripts.spectralis_input \\
-            -r ${params.result_root_dir} \\
+            -r $result_file \\
             -m $mgf_file \\
             -d ${engine}
         """

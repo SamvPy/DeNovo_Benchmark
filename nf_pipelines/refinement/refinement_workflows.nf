@@ -15,9 +15,17 @@ workflow spectralis_rescoring_workflow {
         mgf_result_map = matchFiles(mgf_files, result_files)
         mgf_annotated = SPECTRALIS_PARSER(mgf_result_map, engine)
 
-        rescoring_input = mgf_annotated.flatMap { engine, mgf_list -> 
+
+        mgf_annotated_fixed = mgf_annotated.map { item ->
+            def (engine, mgf_output) = item
+            def mgf_list = (mgf_output instanceof List) ? mgf_output : [mgf_output]
+            tuple(engine, mgf_list)
+        }
+
+        rescoring_input = mgf_annotated_fixed.flatMap { engine, mgf_list -> 
             mgf_list.collect { mgf -> tuple( mgf, engine, 'rescoring') }
         }
+
         SPECTRALIS_RESCORING(rescoring_input, 'rescoring')
           
     emit:

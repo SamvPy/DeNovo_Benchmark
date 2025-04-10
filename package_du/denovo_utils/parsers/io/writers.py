@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from ..converters import DenovoEngineConverter
 from ..exceptions import NoResultsToMergeException, SeparatorCharacterInTitle
+from ..constants import EXTENSIONS
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="denovo_writer.log", level=logging.INFO)
@@ -101,7 +102,12 @@ class MGFWriter:
         return mapping, df
 
     def read_result(self, result_path: str, denovo_engine: str) -> None:
-        parser = DenovoEngineConverter.select(denovo_engine)
+
+        parser_format = denovo_engine
+        if EXTENSIONS[denovo_engine] != '.'+result_path.split('.')[-1]:
+            parser_format = result_path.split('.')[-1]
+
+        parser = DenovoEngineConverter.select(parser_format)
         psmlist = parser.parse(result_path=result_path, mgf_path=self.mgf_path)
         self.results[denovo_engine] = psmlist
 

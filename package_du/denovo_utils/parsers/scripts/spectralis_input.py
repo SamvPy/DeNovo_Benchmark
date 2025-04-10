@@ -10,56 +10,63 @@ from ..io import MGFWriter, psmlist_to_mgf
 
 def main(args):
 
-    # Parse the denovo_engines variable
-    if "all" in args.denovo_engines:
-        engine_extension = EXTENSIONS
-    else:
-        engine_extension = {}
-        for engine in args.denovo_engines:
-            try:
-                engine_extension[engine] = EXTENSIONS[engine]
-            except:
-                raise KeyError(
-                    f"Attribute '{engine}' was passed as argument, but only '{list(EXTENSIONS.keys())}' are allowed!"
-                )
+    print('Processing for engine: {}'.format(args.denovo_engine))
+    # # Parse the denovo_engines variable
+    # if "all" in args.denovo_engines:
+    #     engine_extension = EXTENSIONS
+    # else:
+    #     engine_extension = {}
+    #     for engine in args.denovo_engines:
+    #         try:
+    #             engine_extension[engine] = EXTENSIONS[engine]
+    #         except:
+    #             raise KeyError(
+    #                 f"Attribute '{engine}' was passed as argument, but only '{list(EXTENSIONS.keys())}' are allowed!"
+    #             )
 
     # Set up variables
     filename = os.path.basename(args.mgf_path).split(".")[0]
+    extension = '.'+os.path.basename(args.result_path).split('.')[-1]
+
+    # If the results of a de novo engine are converted to a different format.
+    # Can happen if the results are filtered before post-processing and stored in parquet format.
+   
+    if extension != EXTENSIONS[args.denovo_engine]:
+        parser_format = extension[1:]
+    else:
+        parser_format = args.denovo_engine
 
     # Read in results first and split by psm candidate rank.
     if args.batches:
-        for denovo_engine, extension in engine_extension.items():
-            
-            parser = DenovoEngineConverter.select(denovo_engine)
-            results = parser.parse(
-                result_path=os.path.join(
-                    args.result_path, denovo_engine, filename + f".{denovo_engine}" + extension
-                ),
-                mgf_path=args.mgf_path
+        
+        parser = DenovoEngineConverter.select(parser_format)
+        results = parser.parse(
+            result_path=os.path.join(args.result_path),
+            mgf_path=args.mgf_path
+        )
+        results_by_rank = {}
+
+        ranks = results['rank']
+        for rank in np.unique(ranks):
+            results_by_rank[rank] = results[ranks==rank]
+
+        for rank, psmlist in results_by_rank.items():
+            # Init writer
+            writer = MGFWriter(
+                mgf_path=args.mgf_path,
+                modification_mapping=MODIFICATION_MAPPING_TO_SPECTRALIS,
+                output_folder=args.output_folder
             )
-            results_by_rank = {}
 
-            ranks = results['rank']
-            for rank in np.unique(ranks):
-                results_by_rank[rank] = results[ranks==rank]
+            # Load results
+            writer.load_result(psmlist=psmlist, denovo_engine=args.denovo_engine)
 
-            for rank, psmlist in results_by_rank.items():
-                # Init writer
-                writer = MGFWriter(
-                    mgf_path=args.mgf_path,
-                    modification_mapping=MODIFICATION_MAPPING_TO_SPECTRALIS,
-                    output_folder=args.output_folder
-                )
+            # Parse
+            writer.merge()
 
-                # Load results
-                writer.load_result(psmlist=psmlist, denovo_engine=denovo_engine)
-
-                # Parse
-                writer.merge()
-
-                # Out
-                out_filename = writer.filename + f'_{rank}.spectralis.mgf'
-                writer.write(out_filename=out_filename)
+            # Out
+            out_filename = writer.filename + f'_{rank}.spectralis.mgf'
+            writer.write(out_filename=out_filename)
 
     # Write all results in a single mgf file. MGF can become extremely big.
     else:
@@ -71,13 +78,10 @@ def main(args):
         )
 
         # Read in results in the writer
-        for denovo_engine, extension in engine_extension.items():
-            writer.read_result(
-                result_path=os.path.join(
-                    args.result_path, denovo_engine, filename + f".{denovo_engine}" + extension
-                ),
-                denovo_engine=denovo_engine,
-            )
+        writer.read_result(
+            result_path=args.result_path,
+            denovo_engine=args.denovo_engine
+        )
 
         writer.merge()
 
@@ -109,16 +113,15 @@ if __name__ == "__main__":
         "-r",
         "--result_path",
         required=True,
-        help="Path to the root folder, containing all result files.",
+        help="Path to the result file.",
     )
     parser.add_argument(
         "-m", "--mgf_path", required=True, help="Path to unannotated mgf-file"
     )
     parser.add_argument(
         "-d",
-        "--denovo_engines",
+        "--denovo_engine",
         required=True,
-        nargs="+",
         help="The denovo engine used to generate the files search result file.",
     )
     parser.add_argument(
