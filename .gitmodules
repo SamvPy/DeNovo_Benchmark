@@ -16,3 +16,6 @@
 [submodule "source_code/NovoB"]
 	path = source_code/NovoB
 	url = https://github.com/SamvPy/NovoB.git
+[submodule "source_code/PepNet"]
+	path = source_code/PepNet
+	url = https://github.com/SamvPy/PepNet.git
