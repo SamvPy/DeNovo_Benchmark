@@ -25,3 +25,6 @@
 [submodule "source_code/casanovo"]
 	path = source_code/casanovo
 	url = https://github.com/SamvPy/casanovo.git
+[submodule "source_code/spectralis"]
+	path = source_code/spectralis
+	url = https://github.com/SamvPy/spectralis.git
