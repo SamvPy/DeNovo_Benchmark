@@ -19,3 +19,6 @@
 [submodule "source_code/PepNet"]
 	path = source_code/PepNet
 	url = https://github.com/SamvPy/PepNet.git
+[submodule "source_code/ContraNovo"]
+	path = source_code/ContraNovo
+	url = https://github.com/SamvPy/ContraNovo.git
