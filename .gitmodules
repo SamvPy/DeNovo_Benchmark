@@ -22,3 +22,6 @@
 [submodule "source_code/ContraNovo"]
 	path = source_code/ContraNovo
 	url = https://github.com/SamvPy/ContraNovo.git
+[submodule "source_code/casanovo"]
+	path = source_code/casanovo
+	url = https://github.com/SamvPy/casanovo.git
