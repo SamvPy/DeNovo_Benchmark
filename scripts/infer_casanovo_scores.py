@@ -38,7 +38,9 @@ def peptidoform_converter(
     if isinstance(peptidoform_in, str):
         mod_in = MODIFICATION_MAPPING[peptidoform_in].values()
     elif isinstance(peptidoform_in, dict):
-        mod_in = peptidoform_in.values()
+        mod_in = list(peptidoform_in.values())
+        for mod_in_format, mod_in_reformat in peptidoform_in.items():
+            proforma = proforma.replace(mod_in_format, mod_in_reformat)
     else:
         raise Exception('peptidoform_in should be mod_mapper or str')
     if isinstance(peptidoform_out, str):

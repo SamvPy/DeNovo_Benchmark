@@ -83,8 +83,6 @@ def parse_config_paths(
                         denovo_folder, engine, filename + f".{engine}" + EXTENSIONS[engine]
                     )
 
-        if denovo_dict == {}:
-            continue
         psm_dict["denovo"] = denovo_dict
         mgf_psm_dict[filename] = psm_dict
     return mgf_psm_dict

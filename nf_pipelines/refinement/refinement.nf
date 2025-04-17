@@ -1,7 +1,7 @@
 process INSTANOVO_PLUS_PARSER {
     conda "${params.conda_env_dir}/denovo_analysis_env"
     maxForks 1
-    tag "Parsing InstaNovo output to InstaNovo+ input for ${mgf_file.baseName}..."
+    tag "Parsing ${engine} output to InstaNovo+ input for ${mgf_file.baseName}..."
 
     input:
         tuple path(mgf_file), path(result_files)
@@ -35,6 +35,7 @@ process INSTANOVO_PLUS {
 
     script:
         """
+        mkdir -p ${params.denovo_results_dir}/instanovoplus/${engine}
         python ${params.instanovo_plus_run_script} \\
             -i $result_file \\
             -m ${params.model_path_instanovo_diffusion} \\

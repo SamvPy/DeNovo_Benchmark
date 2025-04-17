@@ -245,7 +245,8 @@ def reformat_mgf(
         path_mgf,
         output_dir="",
         min_peak_length=15,
-        max_charge=8
+        max_charge=8,
+        spectrum_id_list=None
     ):
 
     mgf_file = mgf.read(path_mgf)
@@ -261,8 +262,15 @@ def reformat_mgf(
     skipped_missing_charge = 0
     skipped_above_max_charge = 0
     skipped_by_peak_length = 0
+    skipped_by_spectrum_id_list = 0
 
     for i, spectrum in enumerate(mgf_file):
+
+        if isinstance(spectrum_id_list, list):
+            if spectrum["params"]["title"] not in spectrum_id_list:
+                skipped_by_spectrum_id_list += 1
+                continue
+            
         
         if len(spectrum["m/z array"]) < min_peak_length:
             skipped_by_peak_length += 1
@@ -303,7 +311,8 @@ def reformat_mgf(
         f"Filtered spectra: {total_spectra-len(spectrum_list)}\n\t" \
         f"Peaks below{min_peak_length}: {skipped_by_peak_length}\n\t" \
         f"No charge field: {skipped_missing_charge}\n\t" \
-        f"Above max charge ({max_charge}): {skipped_above_max_charge}"
+        f"Above max charge ({max_charge}): {skipped_above_max_charge}" \
+        f"Not in spectrum id list: {skipped_by_spectrum_id_list}"
     )
 
     if (skipped_missing_charge+skipped_by_peak_length) == total_spectra:

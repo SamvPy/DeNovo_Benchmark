@@ -7,7 +7,7 @@ import pandas as pd
 from pyteomics import mgf
 from glob import glob
 
-from ..constants import UNSUPPORTED_MODS_INSTANOVO_PLUS
+from ..constants import UNSUPPORTED_MODS_INSTANOVO_PLUS, EXTENSIONS
 from ..converters import DenovoEngineConverter
 from ..exceptions import DenovoEngineNotSupported
 
@@ -46,10 +46,14 @@ def main(args):
     for filepath in glob(f"./{filename}.*"):
         if filepath.endswith(".mgf"):
             continue
+        
         engine = os.path.basename(filepath).split(".")[1]
-
+        parser_format = engine
+        if EXTENSIONS[engine] != '.'+os.path.basename(filepath).split(".")[-1]:
+            parser_format = os.path.basename(filepath).split(".")[-1]
+    
         try:
-            denovo_engine = DenovoEngineConverter.select(label=engine)
+            denovo_engine = DenovoEngineConverter.select(label=parser_format)
         except DenovoEngineNotSupported as err:
             logging.info(err)
             logging.info("Skipping {}...".format(filepath))

@@ -3,7 +3,7 @@
 include { matchFiles                         } from "../utils/utility_fn"
 
 process RESCORING_CASANOVO {
-    conda "${params.conda_env_dir}/casanovo_env_analysis"
+    conda "${params.conda_env_dir}/casanovo_analysis_env"
     maxForks 1
     tag "Rescoring psmlist (${psmlist.baseName}) from raw (${peak.baseName}) with Casanovo."
 

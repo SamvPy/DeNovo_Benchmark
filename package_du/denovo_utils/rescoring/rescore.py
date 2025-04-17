@@ -62,6 +62,8 @@ class DeNovoRescorer:
         self.config = configuration
         self.fgens = FGens(configuration=configuration["ms2rescore"])
         self.fgens.initialize_feature_generators()
+        
+        self.mokapot_model_type = ""
 
     def load(
             self,

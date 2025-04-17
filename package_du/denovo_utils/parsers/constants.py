@@ -173,6 +173,7 @@ UNSUPPORTED_MODS_INSTANOVO_PLUS = [
     'M[UNIMOD:35]',
     'M[UNIMOD:35]',
     '[UNIMOD:1]',
+    '[Formula:H-2C1O1]',
     'UNIMOD:4',
     'UNIMOD:35',
     'UNIMOD:1',
@@ -199,7 +200,8 @@ EXTENSIONS = {
     "instanovoplus": ".csv",
     "pihelixnovo": ".tsv",
     "piprimenovo": ".tsv",
-    "deepnovo": ".tsv"
+    "deepnovo": ".tsv",
+    "parquet": ".parquet"
 }
 
 
@@ -236,6 +238,7 @@ EXTENSIONS = {
 
 ### SPECTRALIS STUFF
 MODIFICATION_MAPPING_TO_SPECTRALIS = {
+    "[Formula:H-2C1O1]": "",
     "[+25.980265]-": "",
     "[UNIMOD:1]-": "",
     "[UNIMOD:5]-": "",

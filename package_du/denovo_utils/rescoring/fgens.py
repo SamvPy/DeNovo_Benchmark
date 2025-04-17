@@ -156,7 +156,8 @@ class FGens:
             loaded_model.save(new_model_path)
 
             # Delete the temporary directory (Hopes to prevent broken pipes)
-            shutil.rmtree(os.path.dirname(m))  # Manually remove a temporary folder
+            logging.info(f'Removing DeepLC model folder at {m}')
+            # shutil.rmtree(os.path.dirname(m))  # Manually remove a temporary folder
             logging.info(f"Saved DeepLC model to {new_model_path}")
 
         # Create calibration parameters and save it

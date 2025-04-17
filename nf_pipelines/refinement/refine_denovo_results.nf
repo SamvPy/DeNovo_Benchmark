@@ -9,6 +9,7 @@ include { refinement_workflow as  workflow_pointnovo   } from './refinement_work
 include { refinement_workflow as  workflow_piprimenovo } from './refinement_workflows'
 include { refinement_workflow as  workflow_pihelixnovo } from './refinement_workflows'
 include { refinement_workflow as  workflow_adanovo     } from './refinement_workflows'
+include { refinement_workflow as  workflow_parquet     } from './refinement_workflows'
 
 
 // Main workflow: Loop over the list of engines
@@ -59,5 +60,9 @@ workflow {
     if ('adanovo' in params.denovo_engines) {
         adanovo_results = Channel.fromPath("${params.result_root_dir}/adanovo/*")
         workflow_adanovo('adanovo', mgf_files, adanovo_results)
+    }
+    if ('parquet' in params.denovo_engines) {
+        parquet_results = Channel.fromPath("${params.result_root_dir}/parquet/*")
+        workflow_parquet('parquet', mgf_files, parquet_results)
     }
 }
