@@ -1,10 +1,13 @@
 import re
+import logging
 
 import pandas as pd
 from Bio import SeqIO
 
 from ...utils.pandas import row_to_seqrecord, prediction_to_seqrecord
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename="denovo_output_parsing.log", level=logging.INFO)
 
 class FastaHandler:
     def __init__(self):
@@ -19,7 +22,9 @@ class FastaHandler:
             entry_dict["sequence"] = entry.seq
 
             if not entry_dict["protein_id_full"] == entry.id:
-                raise Exception(entry_dict)
+                logging.warning(
+                    f'{entry_dict["protein_id_full"]} must equal {entry.id}'
+                )
             entries.append(entry_dict)
         self.dataframe = pd.DataFrame(entries)
         self.read_file = True
@@ -103,7 +108,8 @@ class FastaHandler:
                 protein_id_full = fasta_list[0]
                 protein_description = " ".join(fasta_list[1:])
             else:
-                raise Exception(f"{fasta_header} could not be parsed.")
+                protein_id_full = fasta_header
+                logging.warning(f"{fasta_header} could not be parsed.")
 
         # Construct result dictionary
         result = {

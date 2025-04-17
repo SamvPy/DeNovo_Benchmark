@@ -60,6 +60,14 @@ MODIFICATION_MAPPING = {
         "M[UNIMOD:35]": "M[UNIMOD:35]",
         "C[UNIMOD:4]": "C[UNIMOD:4]",
     },
+    "spectralis-ea": {
+        "M[UNIMOD:35]": "M[UNIMOD:35]",
+        "C[UNIMOD:4]": "C[UNIMOD:4]",
+    },
+    "spectralis-rescoring": {
+        "M[UNIMOD:35]": "M[UNIMOD:35]",
+        "C[UNIMOD:4]": "C[UNIMOD:4]",
+    },
     "instanovoplus": {
         "C(+57.02)": "C",
         "C": "C[UNIMOD:4]",

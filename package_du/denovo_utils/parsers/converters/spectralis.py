@@ -6,9 +6,10 @@ import pandas as pd
 from pyteomics import mgf
 from psm_utils import PSM, PSMList
 from tqdm import tqdm
+from glob import glob
 
 from ...utils.proforma import parse_peptidoform
-from .utils import mzml_reader
+from .utils import mzml_reader, infer_rank
 
 tqdm.pandas()
 
@@ -52,12 +53,16 @@ def spectralis_parser(
 
     joined_file["precursor_mz"] = joined_file["pepmass"].apply(lambda x: x[0])
 
+    spectrum_id_dict = {}
+
+    tqdm.pandas(desc='Parsing Spectralis results to PSMList')
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(
                 peptidoform=x["peptidoform"],
                 spectrum_id=x["title"],
                 run=run,
+                rank=infer_rank(x['title'], spectrum_id_dict),
                 score=x["score_spectralis-ea"],
                 precursor_mz=x["precursor_mz"],
                 retention_time=x["rtinseconds"]/60,
@@ -73,3 +78,39 @@ def spectralis_parser(
         ).tolist()
     )
     return psmlist
+
+def load_spectralis_rescoring(root_path: str, filename: str) -> pd.DataFrame:
+    '''
+    Load all rescoring objects from spectralis-rescoring in a dataframe.
+    
+    Parameters
+    ----------
+    root_path: str
+        The root folder where all spectralis rescoring files are stored.
+    filename: str
+        The raw file name of the run of interest. The files with the following regex
+        will be loaded: filename_*.spectralis_rescoring.csv
+
+        The wild card indicates the PSM candidate rank of the original search results.
+    
+    Return
+    ------
+    pd.DataFrame
+        A dataframe with following columns:
+
+            **Spectralis_score**: The score inferred by Spectralis
+            **scans**: spectrum identifier and source seperated by ||
+            **title**: Spectrum identifier
+            **source**: The name of the tool which generated the search results
+            **rank**: The rank of the candidate PSM within the original search results
+    '''
+    list_spectralis = []
+    for p in tqdm(glob(os.path.join(root_path, f'{filename}_*.spectralis_rescoring.csv')), desc='Loading Spectralis results'):
+        spectralis_rescoring = pd.read_csv(p)
+        rank = int(p.split(filename)[1].split('spectralis_rescoring.csv')[0][1:-1])
+        spectralis_rescoring['rank'] = rank
+        list_spectralis.append(spectralis_rescoring)
+    spectralis_df = pd.concat(list_spectralis, ignore_index=True)
+    spectralis_df['title'] = spectralis_df.apply(lambda x: x['scans'].split('||')[0], axis=1)
+    spectralis_df['source'] = spectralis_df.apply(lambda x: x['scans'].split('||')[1], axis=1)
+    return spectralis_df

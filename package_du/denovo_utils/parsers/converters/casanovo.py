@@ -102,6 +102,7 @@ def casanovo_parser(
         ascending=False, method='dense'
     )
 
+    tqdm.pandas(desc='Parsing Casanovo results to PSMList')
     psm_list = joined_file.progress_apply(
         lambda x: PSM(
             peptidoform=x["peptidoform"],

@@ -128,7 +128,7 @@ def load_psmlist(psm_path) -> PSMList:
     # Reload the peptide_evidence objects
     if ('PE_evidence_labels' in psm_list[0]['metadata'].keys() and
         'PE_evidence' in psm_list[0]['metadata'].keys()):
-        for psm in tqdm(psm_list):
+        for psm in tqdm(psm_list, f'Loading results from {os.path.basename(psm_path)}'):
 
             metadata = {}
             for k, v in psm['metadata'].items():

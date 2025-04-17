@@ -93,6 +93,7 @@ def novor_parser(
     ]
     joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
 
+    tqdm.pandas(desc='Parsing Novor results to PSMList')
     psm_list = joined_file.progress_apply(
         lambda x: PSM(
             peptidoform=x["peptidoform"],

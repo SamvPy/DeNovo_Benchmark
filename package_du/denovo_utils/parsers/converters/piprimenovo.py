@@ -96,6 +96,7 @@ def piprimenovo_parser(
         ascending=False, method='dense'
     )
 
+    tqdm.pandas(desc='Parsing pi-PrimeNovo results to PSMList')
     psm_list = joined_file.progress_apply(
         lambda x: PSM(
             peptidoform=x["peptidoform"],

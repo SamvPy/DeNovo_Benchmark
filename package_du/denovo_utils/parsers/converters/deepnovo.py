@@ -70,6 +70,7 @@ def deepnovo_parser(
         ascending=False, method='dense'
     )
 
+    tqdm.pandas(desc='Parsing Deepnovo results to PSMList')
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(

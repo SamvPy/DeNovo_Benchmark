@@ -87,6 +87,7 @@ def novob_parser(
     # Parse to psm utils type format
     joined_file["precursor_mz"] = joined_file["pepmass"].apply(lambda x: x[0])
 
+    tqdm.pandas(desc='Parsing NovoB results to PSMList')
     joined_file = joined_file.progress_apply(
         lambda x: select_top_PSM(x, max_length, mapping, run), axis=1
     )

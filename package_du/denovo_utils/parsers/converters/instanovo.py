@@ -8,7 +8,7 @@ from pyteomics import mgf
 from tqdm import tqdm
 
 from ...utils.proforma import parse_peptidoform
-from .utils import mzml_reader
+from .utils import mzml_reader, infer_rank
 
 tqdm.pandas()
 
@@ -74,6 +74,7 @@ def instanovo_parser(
         ascending=False, method='dense'
     )
 
+    tqdm.pandas(desc='Parsing Instanovo results to PSMList')
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(
@@ -125,12 +126,16 @@ def instanovoplus_parser(
     )
     joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
 
+    spectrum_id_dict = {}
+
+    tqdm.pandas(desc='Parsing Instanovo+ results to PSMList')
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(
                 peptidoform=x["peptidoform"],
                 spectrum_id=x["title"],
                 run=run,
+                rank=infer_rank(x['title'], spectrum_id_dict),
                 score=x["log_probabilities"],
                 precursor_mz=x["precursor_mz"],
                 retention_time=x["rtinseconds"]/60,
@@ -141,3 +146,4 @@ def instanovoplus_parser(
         ).tolist()
     )
     return psmlist
+

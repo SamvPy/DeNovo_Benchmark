@@ -30,3 +30,11 @@ def mzml_reader(path, im):
             }
         )
     return pd.DataFrame(entries)
+
+def infer_rank(spectrum_id, spectrum_id_dict):
+    'Rank is believed to be in order.'
+    if spectrum_id not in spectrum_id_dict.keys():
+        spectrum_id_dict[spectrum_id] = 0
+    
+    spectrum_id_dict[spectrum_id] += 1
+    return spectrum_id_dict[spectrum_id]

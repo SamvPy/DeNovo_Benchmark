@@ -5,8 +5,12 @@ from tqdm import tqdm
 from .psm import PSM
 from .spectrum import Spectrum
 from ..parsers import DenovoEngineConverter
+from ..parsers.constants import EXTENSIONS
+from ..parsers.converters.spectralis import load_spectralis_rescoring
+from ..io.read import load_psmlist
 import logging
 import pandas as pd
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +21,8 @@ ENGINE_NAME_MAPPER = {
     "NovoB": "novob",
     "PepNet": "pepnet"
 }
+
+tqdm.pandas()
 
 class Run:
     def __init__(self, run_id, ignore_IL=True):
@@ -37,7 +43,7 @@ class Run:
 
     def load_data(self, psmlist, score_names, is_ground_truth=False, filter_by_gt=True, filter_decoys=True):
 
-        for psm_ in tqdm(psmlist):
+        for psm_ in tqdm(psmlist, desc=f'Loading PSMs in Run object ({self.run_id})'):
             # Only ground truth psms can add a Spectrum object to the run.
             if is_ground_truth:
                 
@@ -110,7 +116,8 @@ class Run:
 
 
     def load_refinement(self, psmlist):
-        for psm_ in psmlist.get_rank1_psms():
+       
+        for psm_ in psmlist:
             spectrum = self.get_spectrum(psm_["spectrum_id"])
 
             # Cannot load refinements if spectrum has no associated PSMs
@@ -144,7 +151,13 @@ class Run:
                 logging.warning(f"No base prediction ({base_prediction}-{psm_['source']}) for spectrum: {psm_['spectrum_id']} ")
                 continue
             elif len(psm_base_list) > 1:
-                raise Exception(f"Cannot decide on base psm. {len(psm_base_list)} psms found: {psm_base_list}")
+                base_found = False
+                for psm_base in psm_base_list:
+                    if psm_base.rank==psm.rank:
+                        base_found = True
+                        break
+                if not base_found:
+                    raise Exception(f"Cannot decide on base psm. {len(psm_base_list)} psms found: {psm_base_list}")
             else:
                 psm_base = psm_base_list[0]
 
@@ -170,6 +183,35 @@ class Run:
                     score_type="peptide",
                     overwrite=True
                 )
+
+    def load_spectralis_rescoring(self, df: pd.DataFrame):
+        def _register_spectralis_rescoring_psm(self: 'Run', row):
+            spectrum = self.get_spectrum(row['title'])
+            if spectrum is None:
+                return 'spectrum not found'
+            
+            if row['source'] in ENGINE_NAME_MAPPER.keys():
+                engine_name = ENGINE_NAME_MAPPER[row['source']]
+            else:
+                return 'source psm not found'
+            list_psms = spectrum.get_psms_by_engine(engine_name)
+            
+            for psm in list_psms:
+                if psm.rank == row['rank']:
+                    psm.scores.add_score(
+                        score=row['Spectralis_score'],
+                        metadata='Spectralis',
+                        score_type='peptide'
+                    )
+                    return 'registered'
+            return 'rank not found'
+
+        registration_info = df.progress_apply(
+            lambda row: _register_spectralis_rescoring_psm(self, row),
+            axis=1
+        )
+        registration_info = registration_info.value_counts()
+        logging.info(f'Spectralis loading statistics: {registration_info}')
 
     def add_spectrum(self, spectrum: Spectrum):
         if spectrum.spectrum_id in self.spectra.keys():
@@ -310,3 +352,125 @@ def extract_metadata(psm, key, infer_datatype=False):
 
 def leucine_to_isoleucine(peptidoform):
     return Peptidoform(peptidoform.proforma.replace("L", "I"))
+
+def read_runs(
+        root_denovo_output: str,
+        root_ground_truth: str,
+        root_refinement: str,
+        root_mgf: str,
+        filenames: list,
+        engine_names: list[str],
+        refinement_names: list[str],
+        format_ground_truth='sage',
+        ignore_IL=True,
+        rescored_db=True,
+        rescored_denovo=True,
+        rescored_refinement=True
+) -> dict[str, Run]:
+    runs = {}
+    # Each raw file and its results constitutes a distinct Run object
+    for run_name in filenames:
+        mgf_path = os.path.join(root_mgf, run_name + ".mgf")
+
+        logging.info(f'Loading run: {run_name}')
+        run = Run(run_id=run_name, ignore_IL=ignore_IL)
+
+        # Formatting is a bit different in this case
+        if rescored_db:
+            path_gt = os.path.join(root_ground_truth, run_name, 'psmlist', 'ground_truth.parquet')
+            psmlist_gt = load_psmlist(path_gt)
+            score_names = ['score_ms2rescore']
+        else:
+            path_gt = os.path.join(root_ground_truth, run_name + EXTENSIONS[format_ground_truth])
+            parser = DenovoEngineConverter.select(format_ground_truth)
+            psmlist_gt = parser.parse(
+                result_path=path_gt,
+                mgf_path=mgf_path
+            )
+            score_names = []
+
+        logging.info(f'Loaded ground-truth from {path_gt}')
+        run.load_data(
+            psmlist=psmlist_gt.get_rank1_psms(),
+            score_names=score_names,
+            is_ground_truth=True
+        )
+
+        # Iterate over all de novo engines
+        for engine_name in engine_names:
+            logging.info(f"Loading model results: {engine_name}")
+            parser = DenovoEngineConverter.select(engine_name)
+
+            if rescored_denovo:
+                path_denovo_file = os.path.join(
+                    root_denovo_output,
+                    run_name,
+                    'psmlist',
+                    f'{engine_name}.parquet'
+                )
+                psmlist_denovo = load_psmlist(path_denovo_file)
+            else:
+                path_denovo_file = os.path.join(
+                    root_denovo_output,
+                    engine_name,
+                    run_name + f'.{engine_name}.some_extension'
+                )
+                psmlist_denovo = parser.parse(
+                    result_path=path_denovo_file,
+                    mgf_path=mgf_path
+                )
+
+            logging.info(f'Loaded denovo results from {path_denovo_file}')
+            run.load_data(
+                psmlist=psmlist_denovo,
+                score_names=score_names,
+                is_ground_truth=False
+            )
+
+            # Load refinements
+            for refinement_name in refinement_names:
+
+                # Format and paths will be different when rescored.
+                if rescored_refinement:
+                    refinement_path = os.path.join(
+                        root_refinement,
+                        run_name,
+                        'psmlist',
+                        f'{engine_name}.{refinement_name}.parquet'
+                    )
+                    
+                    if os.path.exists(refinement_path):
+                        logging.info(f'Loading refinement: {refinement_name} {engine_name} from {refinement_path}.')
+                        psmlist_refinement = load_psmlist(refinement_path)
+                        run.load_refinement(psmlist_refinement)
+
+                else:
+                    refinement_path = os.path.join(
+                        root_refinement,
+                        refinement_name,
+                        engine_name
+                    )
+                    logging.info(f'Loading refinement: {refinement_name} {engine_name} from {refinement_path}.')
+                    
+                    # Spectralis results are split up by rank
+                    if refinement_name == 'spectralis':
+                        df_spectralis = load_spectralis_rescoring(
+                            root_path=refinement_path,
+                            filename=run_name
+                        )
+                        run.load_spectralis_rescoring(
+                            df=df_spectralis
+                        )
+
+                    if refinement_name == 'instanovoplus':
+                        parser = DenovoEngineConverter.select('instanovoplus')
+                        psmlist_instanovoplus = parser.parse(
+                            result_path=os.path.join(refinement_path, run_name+'.csv'),
+                            mgf_path=mgf_path
+                        )
+                        run.load_refinement(
+                            psmlist=psmlist_instanovoplus
+                        )
+        runs[run_name] = run
+
+    return runs

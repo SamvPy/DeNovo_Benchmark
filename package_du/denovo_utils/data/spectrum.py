@@ -32,7 +32,7 @@ class Spectrum:
         else:
             self.psm_candidates.append(psm)
     
-    def rerank(self, score_name, engines):
+    def rerank(self, score_name, engines, rank_metadata):
 
         psms = []
         scores = []
@@ -45,8 +45,7 @@ class Spectrum:
         order_idx = np.argsort(scores)
 
         for i, order_id in enumerate(order_idx):
-            psms[order_id].rank = i
-            psms[order_id].metadata['previous_rank'] = psm.rank
+            psms[order_id].metadata[rank_metadata] = i
 
     def get_psms_by_engine(self, engine_name):
         return [psm for psm in self.psm_candidates if psm.engine_name == engine_name]

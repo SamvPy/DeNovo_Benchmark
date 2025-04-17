@@ -88,6 +88,7 @@ def contranovo_parser(
         ascending=False, method='dense'
     )
 
+    tqdm.pandas(desc='Parsing Contranovo results to PSMList')
     psmlist = PSMList(
         psm_list=joined_file.progress_apply(
             lambda x: PSM(

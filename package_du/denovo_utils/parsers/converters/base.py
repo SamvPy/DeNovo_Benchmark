@@ -140,6 +140,7 @@ class DenovoEngineConverter(Enum):
             The label of the de novo search engine. Options include:
             - 'casanovo'
             - 'instanovo'
+            - 'instanovoplus'
             - 'contranovo'
             - 'novob'
             - 'pepnet'
@@ -148,6 +149,7 @@ class DenovoEngineConverter(Enum):
             - 'pointnovo'
             - 'piprimenovo'
             - 'pihelixnovo'
+            - 'spectralis'
             - 'psm-utils' or any engine supported within psm-utils, e.g. sage.
 
         Returns

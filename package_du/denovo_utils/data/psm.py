@@ -69,7 +69,7 @@ class PSM:
                     continue
                 psm = self.refinement[refinement][0]
                 if psm is not None:
-                    psm.compare(psm_gt, metadata_score)
+                    psm.compare(psm_gt, metadata_score, ignore_score=ignore_score)
 
         # Extract the scores associated with the ground-truth and current PSM
         score = self.scores.get_score(
