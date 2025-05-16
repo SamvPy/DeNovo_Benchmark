@@ -157,7 +157,7 @@ class Run:
                         base_found = True
                         break
                 if not base_found:
-                    raise Exception(f"Cannot decide on base psm. {len(psm_base_list)} psms found: {psm_base_list}")
+                    raise Exception(f"Cannot decide on base psm. {len(psm_base_list)} psms found for spectrum: {spectrum.spectrum_id}")
             else:
                 psm_base = psm_base_list[0]
 

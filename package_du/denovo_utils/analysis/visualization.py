@@ -56,6 +56,7 @@ def plot_spectrum(
     fragment_tol_mode: Literal["ppm", "Da"] = "ppm",
     ion_types: str = "by",
     max_ion_charge: int = 2,
+    neutral_losses=False,
     plot: bool = True,
 ) -> sus.MsmsSpectrum:
     """
@@ -118,7 +119,8 @@ def plot_spectrum(
         fragment_tol_mass=fragment_tol_mass,
         fragment_tol_mode=fragment_tol_mode,
         ion_types=ion_types,
-        max_ion_charge=max_ion_charge
+        max_ion_charge=max_ion_charge,
+        neutral_losses=neutral_losses
     )
 
     if plot:
