@@ -11,6 +11,11 @@ from ..parsers.constants import AA_MASSES
 from sklearn.metrics import precision_recall_curve
 import seaborn as sns
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
+from tqdm import tqdm
+import os
+from pathlib import Path
 
 # Method is borrowed from 'spectrum_utils' package
 # (temporary removed 'spectrum_utils' dependence
@@ -454,6 +459,61 @@ def convert_peptidoform(peptidoform):
         out.append((aa, mod))
     return out
 
+def in_fasta(sequence: str, fasta, fasta_type='str'):
+    sequence = sequence.replace('L', 'I')
+    if fasta_type=='str':
+        return sequence in fasta
+    else:
+        for fasta_sequence in fasta:
+            if sequence in fasta_sequence:
+                return True
+        return False
+    
+def reannotate_error_type(run, reannotation_labels, fasta_seq_concat):
+    for spectrum in tqdm(run.spectra.values(), desc=f'Reannotating error types for run {run.run_id}'):
+        
+        for psm in spectrum.psm_candidates:
+            error_type = psm.evaluation['score_ms2rescore'].error_type
+            
+            if error_type in reannotation_labels:
+
+                if error_type != 'match':
+                    psm.metadata['prev_error_type'] = psm.evaluation['score_ms2rescore'].error_type
+                    
+                    if in_fasta(psm.peptidoform.sequence, fasta=fasta_seq_concat):
+                        psm.evaluation['score_ms2rescore'].error_type = 'No match - In FASTA'
+                    else:
+                        psm.evaluation['score_ms2rescore'].error_type = 'No match - Not in FASTA'
+            
+            # Also check refinements
+            # Check Spectralis
+            try:
+                psm_refinement = psm.refinement['Spectralis']
+                if not psm_refinement[-1]:
+                    refinement_error_type = psm_refinement[0].evaluation['score_ms2rescore'].error_type
+                    if refinement_error_type != 'match':
+                        psm_refinement[0].metadata['prev_error_type'] = psm_refinement[0].evaluation['score_ms2rescore'].error_type
+                        if in_fasta(psm.peptidoform.sequence, fasta=fasta_seq_concat):
+                            psm_refinement[0].evaluation['score_ms2rescore'].error_type = 'No match - In FASTA'
+                        else:
+                            psm_refinement[0].evaluation['score_ms2rescore'].error_type = 'No match - Not in FASTA'
+            except:
+                pass
+            # Check IN+
+            try:
+                psm_refinement = psm.refinement['InstaNovo+']
+                if not psm_refinement[-1]:
+                    refinement_error_type = psm_refinement[0].evaluation['score_ms2rescore'].error_type
+                    if refinement_error_type != 'match':
+                        psm_refinement[0].metadata['prev_error_type'] = psm_refinement[0].evaluation['score_ms2rescore'].error_type
+                        if in_fasta(psm.peptidoform.sequence, fasta=fasta_seq_concat):
+                            psm_refinement[0].evaluation['score_ms2rescore'].error_type = 'No match - In FASTA'
+                        else:
+                            psm_refinement[0].evaluation['score_ms2rescore'].error_type = 'No match - Not in FASTA'
+            except:
+                pass
+
+
 def calculate_prc(scores_correct, scores_all, total_predicted, threshold):
 
     c = sum([score > threshold for score in scores_correct])
@@ -601,37 +661,44 @@ def plot_refinement_error_table(error_table, fig, ax):
         annotate_stacked_histplot(ax[i])
         ax[i].tick_params(axis='x', rotation=0)
 
-def get_match_score_table(run, engine, score_metadata, eval_score_metadata="ms2rescore", refiner=None, return_table=False):
+def get_match_score_table(runs, engine, score_metadata, eval_score_metadata="score_ms2rescore", refiner=None, return_table=False):
 
-    pr_table = {
-        "spectrum_id": [],
-        "score": [],
-        "match": []
-    }
-    missing = 0
+    pr_tables = []
 
-    for spectrum in run.spectra.values():
-        
-        psm = spectrum.get_psms_by_engine(engine)[0]
+    for run in runs.values():
 
-        if refiner is not None:
-            if refiner not in psm.refinement.keys():
-                missing+=1
-                continue
-            if psm.refinement[refiner][1]:
+        pr_table = {
+            "spectrum_id": [],
+            "score": [],
+            "match": []
+        }
+        missing = 0
+
+        for spectrum in run.spectra.values():
+            
+            psm = spectrum.get_psms_by_engine(engine)[0]
+
+            if refiner is not None:
+                if refiner not in psm.refinement.keys():
+                    missing+=1
+                    continue
+                if psm.refinement[refiner][1]:
+                    pr_table["match"].append(psm.evaluation[eval_score_metadata].error_type=="match")
+                    pr_table["score"].append(psm.scores.get_score(score_metadata))
+                else:
+                    psm_refinement = psm.refinement[refiner][0]
+                    pr_table["match"].append(psm_refinement.evaluation[eval_score_metadata].error_type=="match")
+                    pr_table["score"].append(psm_refinement.scores.get_score(score_metadata))
+                pr_table["spectrum_id"].append(spectrum.spectrum_id)
+
+            else:
                 pr_table["match"].append(psm.evaluation[eval_score_metadata].error_type=="match")
                 pr_table["score"].append(psm.scores.get_score(score_metadata))
-            else:
-                psm_refinement = psm.refinement[refiner][0]
-                pr_table["match"].append(psm_refinement.evaluation[eval_score_metadata].error_type=="match")
-                pr_table["score"].append(psm_refinement.scores.get_score(score_metadata))
-            pr_table["spectrum_id"].append(spectrum.spectrum_id)
+                pr_table["spectrum_id"].append(spectrum.spectrum_id)
+        pr_table = pd.DataFrame(pr_table)
+        pr_tables.append(pr_table)
 
-        else:
-            pr_table["match"].append(psm.evaluation[eval_score_metadata].error_type=="match")
-            pr_table["score"].append(psm.scores.get_score(score_metadata))
-            pr_table["spectrum_id"].append(spectrum.spectrum_id)
-    pr_table = pd.DataFrame(pr_table)
+    pr_table = pd.concat(pr_tables, ignore_index=True)
 
     if return_table:
         return pr_table
@@ -733,19 +800,23 @@ def plot_precision_recall_refinement(
 
 
 def load_seq_score_dicts(
-        run,
+        runs,
         denovo_name,
+        ms2rescore_name,
         total_predicted
 ):
     denovo_seqs = {
         denovo_name: {},
-        "ms2rescore": {},
+        ms2rescore_name: {},
         "Spectralis": {}
     }
 
     for score_metadata in denovo_seqs.keys():
         t = get_match_score_table(
-            run, engine=denovo_name, score_metadata=score_metadata, return_table=True
+            runs=runs,
+            engine=denovo_name,
+            score_metadata=score_metadata,
+            return_table=True
         )       
         prc = get_prc_curve(t, total_predicted)
 
@@ -757,12 +828,12 @@ def load_seq_score_dicts(
 
     spectralis_seqs = {
         "Spectralis": [],
-        "ms2rescore": []
+        ms2rescore_name: []
     }
 
     for score_metadata in spectralis_seqs.keys():
         t = get_match_score_table(
-            run, engine=denovo_name, score_metadata=score_metadata, refiner="Spectralis", return_table=True
+            runs, engine=denovo_name, score_metadata=score_metadata, refiner="Spectralis", return_table=True
         )
         
         prc = get_prc_curve(t, total_predicted)
@@ -774,12 +845,12 @@ def load_seq_score_dicts(
     
     instanovo_seqs = {
         "InstaNovo+": [],
-        "ms2rescore": []
+        ms2rescore_name: []
     }
 
     for score_metadata in instanovo_seqs.keys():
         t = get_match_score_table(
-            run, engine=denovo_name, score_metadata=score_metadata, refiner="InstaNovo+", return_table=True
+            runs, engine=denovo_name, score_metadata=score_metadata, refiner="InstaNovo+", return_table=True
         )
         prc = get_prc_curve(t, total_predicted)
 
@@ -795,3 +866,165 @@ def load_seq_score_dicts(
         "instanovo_seqs": instanovo_seqs
     }
     return seq_score_dict
+
+def assign_colors(row, base_engine, post_processor):
+    # Good refinements
+    if (row[f'{base_engine}'] == 'match') & (row[f'{post_processor}'] == 'match'):
+        return 'lightsteelblue'
+    if (row[f'{base_engine}'] != 'match') & (row[f'{post_processor}'] == 'match'):
+            return 'mediumseagreen'
+    
+    # Medium refinement
+    if (row[f'{base_engine}'] == 'No match - Not in FASTA') & (row[f'{post_processor}'] == 'No match - In FASTA'):
+          return 'orange'
+
+    # Bad refinement
+    if (row[f'{base_engine}'] == 'match') & (row[f'{post_processor}'] != 'match'):
+            return px.colors.qualitative.Prism[7]
+    
+    # No improvement cases
+    if (row[f'{base_engine}'] == 'No match - In FASTA') & (row[f'{post_processor}'] == 'No match - In FASTA'):
+        #   return px.colors.qualitative.Prism[7]
+        return 'lightsteelblue'
+    if (row[f'{base_engine}'] == 'No match - Not in FASTA') & (row[f'{post_processor}'] == 'No match - Not in FASTA'):
+        # return px.colors.qualitative.Prism[7]
+        return 'lightsteelblue'
+
+def get_refinement_error_tables(
+        run,
+        base_engine,
+        post_processor,
+        score_metadata='score_ms2rescore'
+    ):
+    entries = []
+
+    for spectrum in run.spectra.values():
+        psms = spectrum.get_psms_by_engine(base_engine)
+        if len(psms) == 0:
+            continue
+        psm = psms[0]
+        # Add base psm
+        error_type_base = psm.evaluation[score_metadata].error_type
+        entries.append(
+            {
+                'run|spectrum_id': run.run_id + '|' + spectrum.spectrum_id,
+                'engine': base_engine,
+                'error_type': error_type_base,
+                'changed': None
+            }
+        )
+
+        for r_name, (r_psm, unchanged) in psm.refinement.items():
+            if r_name != post_processor:
+                continue
+            if unchanged:
+                error_type = psm.evaluation[score_metadata].error_type
+                entries.append(
+                    {
+                        'run|spectrum_id': run.run_id + '|' + spectrum.spectrum_id,
+                        'engine': r_name,
+                        'error_type': error_type_base,
+                        'changed': False
+                    }
+                )
+            else:
+                entries.append(
+                    {
+                        'run|spectrum_id': run.run_id + '|' + spectrum.spectrum_id,
+                        'engine': r_name,
+                        'error_type': r_psm.evaluation[score_metadata].error_type,
+                        'changed': True
+                    }
+                )
+
+    return pd.DataFrame(entries)
+
+def create_refinement_alluvial(
+        runs,
+        base_engine,
+        post_processor,
+        return_table=False,
+        score_metadata='score_ms2rescore',
+        match_types=["match", "No match - In FASTA", "No match - Not in FASTA"],
+        save_figure=False,
+        save_path='./images'
+    ):
+    # Get the data in correct format
+    error_tables = []
+    for run in runs.values():
+        error_table = get_refinement_error_tables(
+            run,
+            base_engine=base_engine,
+            post_processor=post_processor,
+            score_metadata=score_metadata
+        )
+        error_tables.append(error_table)
+    error_df = pd.concat(error_tables)
+
+    # Create the figure
+    error_df = error_df[error_df.engine.isin([base_engine, post_processor])]
+    error_df = error_df.pivot('run|spectrum_id', 'engine')
+    error_df.columns = ['_'.join(col) if isinstance(col, tuple) else col for col in error_df.columns]
+    error_df = error_df.rename(
+        columns={
+            f'error_type_{post_processor}': f'{post_processor}',
+            f'error_type_{base_engine}': f'{base_engine}',
+            f'changed_{post_processor}': 'Refined'
+        }
+    )[[f'{base_engine}', 'Refined', f'{post_processor}']]
+
+    error_df['color'] = error_df.apply(lambda x: assign_colors(x, base_engine, post_processor), axis=1)
+
+
+    if return_table:
+        return error_df, None
+
+    dropped = len(error_df) - len(error_df.dropna())
+    print(f'Dropped {dropped} missing rows.')
+    error_df = error_df.dropna()
+
+    color = error_df.color
+    px.parallel_categories(
+        error_df,
+    )
+
+    base_dim = go.parcats.Dimension(
+        values=error_df[f'{base_engine}'],
+        label=f"{base_engine} PSM",
+        categoryorder="array",
+        categoryarray=match_types
+    )
+
+    refinement_status_dim = go.parcats.Dimension(
+        values=error_df['Refined'],
+        label="Refinement",
+        categoryorder="array",
+        categoryarray=[False, True]
+    )
+
+    refinement_dim = go.parcats.Dimension(
+        values=error_df[f'{post_processor}'],
+        label=f"{post_processor} PSM",
+        categoryorder="array",
+        categoryarray=match_types
+    )
+
+    fig = go.Figure(data = [go.Parcats(dimensions=[base_dim, refinement_status_dim, refinement_dim],
+            line={'color': color},
+            hoveron='color',
+            labelfont={'size': 18, 'family': 'Times'},
+            tickfont={'size': 16, 'family': 'Times'},
+            arrangement='freeform')])
+    fig.update_layout(
+        title=f'{base_engine} -> {post_processor}',
+        autosize=False,
+        width=1000,
+        height=500,
+        margin=dict(l=150, r=150, t=50, b=50)
+    )
+
+    if save_figure:
+        Path(save_path).mkdir(parents=True, exist_ok=True)
+        fig.write_image(os.path.join(f'{save_path}', f'refinement_{base_engine}_{post_processor}.svg'))
+
+    return error_df, fig
