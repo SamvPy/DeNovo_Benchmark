@@ -21,7 +21,7 @@ process PIHELIXNOVO {
             HelixNovo.main \\
                 --mode=denovo \\
                 --config=$config_pihelixnovo \\
-                --gpu=0 \\
+                --gpu=1 \\
                 --output=denovo.log \\
                 --peak_path=$mgf_file \\
                 --model=${params.model_path_pihelixnovo}

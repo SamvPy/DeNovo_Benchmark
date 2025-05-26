@@ -1,5 +1,6 @@
 {
     "M[UNIMOD:Oxidation]": "M[UNIMOD:35]",
     "[UNIMOD:Acetylation]-": "[UNIMOD:1]-",
-    "Q[UNIMOD:Gln->pyro-Glu]": "[UNIMOD:385]-"
+    "Q[UNIMOD:Gln->pyro-Glu]": "[UNIMOD:385]-",
+    "[Formula:H-2C1O1]-": "[+25.980265]-"
 }

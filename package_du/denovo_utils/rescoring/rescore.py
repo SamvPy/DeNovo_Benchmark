@@ -372,7 +372,7 @@ class DeNovoRescorer:
                     {f"score_ms2rescore": str(ms2rescore_score)}
                 )
 
-    def batched_fgen_and_rescore(self, psm_list, n_psms=10000, denovo=True, save_folder="", filename='filename'):
+    def batched_fgen_and_rescore(self, psm_list, n_psms=10000, denovo=True, save_folder="", filename='filename', post_processor=None):
         # TODO: Implement a batched version of add_features and rescore
         # This should include a concatenation for saving psm_lists and features.
         os.makedirs(os.path.dirname(
@@ -390,6 +390,29 @@ class DeNovoRescorer:
 
         while True:
             # Select subset
+            if post_processor is None:
+                save_features_path = os.path.join(
+                    save_folder,
+                    "features",
+                    f"{filename}_{counter}.parquet"
+                )
+                save_psmlist_path = os.path.join(
+                    save_folder,
+                    "psmlist",
+                    f"{filename}_{counter}.parquet"
+                )
+            else:
+                save_features_path = os.path.join(
+                    save_folder,
+                    "features",
+                    f"{filename}_{counter}.{post_processor}.parquet"
+                )
+                save_psmlist_path = os.path.join(
+                    save_folder,
+                    "psmlist",
+                    f"{filename}_{counter}.{post_processor}.parquet"
+                )
+
             psm_subset = psm_list[lower: upper]
 
             # Preprocess again to make sure some decoy or targets
@@ -403,19 +426,11 @@ class DeNovoRescorer:
             # Save
             save_features(
                 psm_list=psm_subset,
-                save_path=os.path.join(
-                    save_folder,
-                    "features",
-                    f"{filename}_{counter}.parquet"
-                )
+                save_path=save_features_path
             )
             save_psmlist(
                 psm_list=psm_subset,
-                save_path=os.path.join(
-                    save_folder,
-                    "psmlist",
-                    f"{filename}_{counter}.parquet"
-                )
+                save_path=save_psmlist_path
             )
 
             # Break if the upper signified the end.
