@@ -19,7 +19,10 @@ ENGINE_NAME_MAPPER = {
     "ContraNovo": "contranovo",
     "InstaNovo": "instanovo",
     "NovoB": "novob",
-    "PepNet": "pepnet"
+    "PepNet": "pepnet",
+    "pihelixnovo": "pi-HelixNovo",
+    "piprimenovo": "pi-PrimeNovo",
+    "adanovo": "AdaNovo"
 }
 
 tqdm.pandas()
