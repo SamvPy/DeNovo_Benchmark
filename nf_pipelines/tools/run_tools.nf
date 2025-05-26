@@ -1,5 +1,5 @@
 include { CASANOVO    } from "./modules/casanovo"
-include { INSTANOVO   } from "./modules/instanovo"
+include { INSTANOVO_V1 as INSTANOVO } from "./modules/instanovo"
 include { CONTRANOVO  } from "./modules/contranovo"
 include { PEPNET      } from "./modules/pepnet"
 include { NOVOB       } from "./modules/novob"
@@ -75,7 +75,7 @@ workflow RUN_TOOLS {
 
         // INSTANOVO
         if (params.run_instanovo) {
-            config_instanovo = Channel.fromPath(params.config_instanovo)
+            config_instanovo = Channel.value(file(params.config_instanovo))
 
             if (params.serialize) {
                 (instanovo_result, serializer) = INSTANOVO(mgf_files, serializer, config_instanovo.first())

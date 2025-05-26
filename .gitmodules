@@ -28,3 +28,6 @@
 [submodule "source_code/spectralis"]
 	path = source_code/spectralis
 	url = https://github.com/SamvPy/spectralis.git
+[submodule "source_code/InstaNovo"]
+	path = source_code/InstaNovo
+	url = https://github.com/SamvPy/InstaNovo.git

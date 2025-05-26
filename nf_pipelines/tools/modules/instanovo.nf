@@ -31,3 +31,31 @@ process INSTANOVO {
                 --knapsack_path=${params.knapsack_instanovo}
         """
 }
+
+process INSTANOVO_V1 {
+    maxForks params.maxforks_tool
+    tag "Running InstaNovo_v1 on ${mgf_file.baseName}..."
+
+    // Store the instanovo result in provided folder
+    storeDir "${params.outdir_raw}/instanovo"
+
+    input:
+        path mgf_file
+        path serializer
+        path config_instanovo
+
+    output:
+        path "${mgf_file.baseName}.instanovo.csv"
+        path serializer
+
+    script:
+        """
+        source /home/sam/instanovo_env_v2/bin/activate
+        instanovo transformer predict \\
+            --data-path=$mgf_file \\
+            --output-path=${mgf_file.baseName}.instanovo.csv \\
+            --instanovo-model=${params.model_path_instanovo} \\
+            --denovo
+        deactivate
+        """
+}
