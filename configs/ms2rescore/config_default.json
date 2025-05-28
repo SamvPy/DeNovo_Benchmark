@@ -4,12 +4,12 @@
         "feature_generators": {
             "basic": {},
             "ms2pip": {
-                "model": "timsTOF2024",
+                "model": "HCD2021",
                 "ms2_tolerance": 0.02,
                 "processes": 1
             },
             "deeplc": {
-                "deeplc_retrain": true
+                "deeplc_retrain": false
             },
             "maxquant": {},
             "peak_fgen": {
@@ -39,9 +39,8 @@
                 "neutral_losses_evidence": ["", "-H2O1"],
                 "fragment_tol_mass": 20,
                 "fragment_tol_mode": "ppm",
-                "spectrum_format": "mzML"
-            },
-            "im2deep": {}
+                "spectrum_format": "mgf"
+            }
         },
         "rescoring_engine": {
             "mokapot": {
@@ -82,20 +81,16 @@
             "hyperscore",
             "missing_frag_sites",
             "missing_frag_pct",
+            "ppm_precursor",
             "ppm_mean_y",
             "ppm_mean_b",
             "explained_y_pct",
             "explained_b_pct",
             "explained_all_pct",
             "charge_n",
-            "spec_pearson",
-            "spec_spearman",
+            "spec_mse_norm",
             "cos",
-            "dotprod",
-            "cos_iony",
-            "iony_spearman",
             "observed_retention_time",
-            "predicted_retention_time",
             "rt_diff"
         ]
     }

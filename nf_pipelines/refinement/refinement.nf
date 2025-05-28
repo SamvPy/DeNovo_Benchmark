@@ -8,40 +8,45 @@ process INSTANOVO_PLUS_PARSER {
         val engine
 
     output:
-        path "${mgf_file.baseName}.feather"  // Parsed instanovo_plus input file
-        path "${mgf_file.baseName}.json" // index-spectrum_id mapping file
+        path "${mgf_file.baseName}.ipc"  // Parsed instanovo_plus input file
+        path "${mgf_file.baseName}.csv" // index-spectrum_id mapping file
+        val engine
 
     script:
         """
-        python -m denovo_utils.parsers.scripts.instanovoplus_input \\
+        python -m denovo_utils.parsers.scripts.instanovoplus_input_v1 \\
             -m $mgf_file \\
+            -r $result_files \\
             -d ${engine}
         """
 
 }
 
 process INSTANOVO_PLUS {
-    conda "${params.conda_env_dir}/instanovo_env"
     maxForks 1
-    tag "Refining sequence predictions with InstaNovo+ for ${result_file.baseName}..."
+    tag "Refining sequence predictions with InstaNovo+ for ${input_file.baseName}..."
+
+    publishDir "${params.denovo_results_dir}/instanovoplus/${engine}", mode: "copy", saveAs: { filename ->
+        "${input_file.baseName}.csv"}, pattern: "${input_file.baseName}.csv"
 
     input:
-        path result_file
-        path mapping_file
+        path input_file
+        path init_predictions
+        path config_instanovo
         val engine
 
     output:
-        path "${result_file.baseName}.csv"
+        path "${input_file.baseName}.csv"
 
     script:
         """
-        mkdir -p ${params.denovo_results_dir}/instanovoplus/${engine}
-        python ${params.instanovo_plus_run_script} \\
-            -i $result_file \\
-            -m ${params.model_path_instanovo_diffusion} \\
-            -c $mapping_file \\
-            -o ${params.denovo_results_dir}/instanovoplus/${engine} \\
-            -d ${params.gpu_device}
+        source /home/sam/instanovo_env_v2/bin/activate
+        instanovo diffusion predict \\
+            --data-path ./$input_file \\
+            --output-path "./${input_file.baseName}.csv" \\
+            instanovo_predictions_path=./$init_predictions \\
+            --config-path='configs/inference' \\
+            --config-name='instanovoplus.yaml'
         """
 }
 
@@ -90,6 +95,53 @@ process SPECTRALIS {
             --input_path=$mgf_file \\
             --output_path=${mgf_file.baseName}_${mode}.csv \\
             --config=${params.config_spectralis}
+        """
+}
+
+process INSTANOVO_PLUS_PARSER_LEGACY {
+    conda "${params.conda_env_dir}/denovo_analysis_env"
+    maxForks 1
+    tag "Parsing ${engine} output to InstaNovo+ input for ${mgf_file.baseName}..."
+
+    input:
+        tuple path(mgf_file), path(result_files)
+        val engine
+
+    output:
+        path "${mgf_file.baseName}.ipc"  // Parsed instanovo_plus input file
+        path "${mgf_file.baseName}.json" // index-spectrum_id mapping file
+
+    script:
+        """
+        python -m denovo_utils.parsers.scripts.instanovoplus_input \\
+            -m $mgf_file \\
+            -d ${engine}
+        """
+
+}
+
+process INSTANOVO_PLUS_LEGACY {
+    conda "${params.conda_env_dir}/instanovo_env"
+    maxForks 1
+    tag "Refining sequence predictions with InstaNovo+ for ${result_file.baseName}..."
+
+    input:
+        path result_file
+        path mapping_file
+        val engine
+
+    output:
+        path "${result_file.baseName}.csv"
+
+    script:
+        """
+        mkdir -p ${params.denovo_results_dir}/instanovoplus/${engine}
+        python ${params.instanovo_plus_run_script} \\
+            -i $result_file \\
+            -m ${params.model_path_instanovo_diffusion} \\
+            -c $mapping_file \\
+            -o ${params.denovo_results_dir}/instanovoplus/${engine} \\
+            -d ${params.gpu_device}
         """
 }
 

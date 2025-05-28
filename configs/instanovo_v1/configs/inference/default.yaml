@@ -9,7 +9,7 @@ knapsack_path: # type: directory
 data_type: # .csv, .mgf, .mzml, .mzxml
 
 # Inference mode
-denovo: True
+denovo: False
 refine: True
 num_beams: 1 # 1 defaults to greedy search with basic filtering
 max_length: 40

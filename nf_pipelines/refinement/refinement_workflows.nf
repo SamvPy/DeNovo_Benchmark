@@ -85,9 +85,10 @@ workflow instanovoplus_workflow {
         result_files
 
     main:
+        config_instanovoplus = Channel.fromPath(params.config_instanovoplus, type: 'dir')
         mgf_result_map = matchFiles(mgf_files, result_files)
-        (result_file_parsed, mapping_file) = INSTANOVO_PLUS_PARSER(mgf_result_map, engine)
-        INSTANOVO_PLUS(result_file_parsed, mapping_file, engine)
+        (input_file, init_pred, engine) = INSTANOVO_PLUS_PARSER(mgf_result_map, engine)
+        INSTANOVO_PLUS(input_file, init_pred, config_instanovoplus.first(), engine)
     
     emit:
         instanovoplus_output = INSTANOVO_PLUS.out

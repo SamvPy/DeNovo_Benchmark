@@ -1,8 +1,13 @@
 ### PATHS
 #binreclass_model_path: 'spectralis_binreclass.pt'
 #scorer_path: 'spectralis_score.pkl'
-binreclass_model_path: /home/samva/Doctorate/data_directory/denovo_project/checkpoints/spectralis/spectralis_bin_reclass.pt
-scorer_path: /home/samva/Doctorate/data_directory/denovo_project/checkpoints/spectralis/spectralis_score.pkl
+
+# For local
+# binreclass_model_path: /home/samva/Doctorate/data_directory/denovo_project/checkpoints/spectralis/spectralis_bin_reclass.pt
+# scorer_path: /home/samva/Doctorate/data_directory/denovo_project/checkpoints/spectralis/spectralis_score.pkl
+
+binreclass_model_path: /public/compomics3/Sam/denovo_checkpoints/spectralis/spectralis_bin_reclass.pt
+scorer_path: /public/compomics3/Sam/denovo_checkpoints/spectralis/spectralis_score.pkl
 
 
 ### BIN RECLASSIFICATION
@@ -57,4 +62,4 @@ prosit_ce: 0.32
 verbose: True
 interpret_c_as_fix: True
 
-gpu_device: "0"
+gpu_device: "1"

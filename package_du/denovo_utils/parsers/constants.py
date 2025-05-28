@@ -12,12 +12,15 @@ MODIFICATION_MAPPING = {
         "-17.027": "[UNIMOD:385]-",
     },
     "instanovo": {
-        "C(+57.02)": "C",
-        "C": "C[UNIMOD:4]",
+        "C(+57.02)": "C[UNIMOD:4]",
+        # "C": "C[UNIMOD:4]",
         "M(ox)": "M[UNIMOD:35]",
         "M(+15.99)": "M[UNIMOD:35]",
         "N(+.98)": "N[UNIMOD:7]",
         "Q(+.98)": "Q[UNIMOD:7]",
+        "[UNIMOD:1]": "[UNIMOD:1]-",
+        "[UNIMOD:5]": "[UNIMOD:5]-",
+        "[UNIMOD:385]": "[UNIMOD:385]-"
     },
     "contranovo": {
         # N-terminal only
@@ -70,11 +73,14 @@ MODIFICATION_MAPPING = {
     },
     "instanovoplus": {
         "C(+57.02)": "C",
-        "C": "C[UNIMOD:4]",
+        # "C": "C[UNIMOD:4]",
         "M(ox)": "M[UNIMOD:35]",
         "M(+15.99)": "M[UNIMOD:35]",
         "N(+.98)": "N[UNIMOD:7]",
         "Q(+.98)": "Q[UNIMOD:7]",
+        "[UNIMOD:1]": "[UNIMOD:1]-",
+        "[UNIMOD:5]": "[UNIMOD:5]-",
+        "[UNIMOD:385]": "[UNIMOD:385]-"
     },
     "piprimenovo": {
         # N-terminal only
@@ -149,39 +155,45 @@ def generate_all_modification_labels(mapping: dict) -> dict:
 
 ALL_MODIFICATION_LABELS = generate_all_modification_labels(MODIFICATION_MAPPING)
 
+# UNSUPPORTED_MODS_INSTANOVO_PLUS = [
+#     '[UNIMOD:4]',
+#     '[UNIMOD:35]',
+#     '[UNIMOD:7]',
+#     '[+25.980265]-',
+#     '[UNIMOD:1]-',
+#     '[UNIMOD:5]-',
+#     '[UNIMOD:385]-',
+#     'C[UNIMOD:4]',
+#     '[+25.980265]-',
+#     'M[UNIMOD:35]',
+#     'N[UNIMOD:7]',
+#     'Q[UNIMOD:7]',
+#     'M[UNIMOD:35]',
+#     'M[UNIMOD:35]',
+#     'N[UNIMOD:7]',
+#     'Q[UNIMOD:7]',
+#     'S[UNIMOD:21]',
+#     'T[UNIMOD:21]',
+#     'Y[UNIMOD:21]',
+#     'C[UNIMOD:4]',
+#     'M[UNIMOD:35]',
+#     'M[UNIMOD:35]',
+#     '[UNIMOD:1]',
+#     '[Formula:H-2C1O1]',
+#     'UNIMOD:4',
+#     'UNIMOD:35',
+#     'UNIMOD:1',
+#     'UNIMOD:385',
+#     'UNIMOD:23',
+#     'UNIMOD:4',
+#     'UNIMOD:35',
+#     'UNIMOD:5'
+# ]
+
 UNSUPPORTED_MODS_INSTANOVO_PLUS = [
-    '[UNIMOD:4]',
-    '[UNIMOD:35]',
-    '[UNIMOD:7]',
     '[+25.980265]-',
-    '[UNIMOD:1]-',
-    '[UNIMOD:5]-',
-    '[UNIMOD:385]-',
-    'C[UNIMOD:4]',
-    '[+25.980265]-',
-    'M[UNIMOD:35]',
-    'N[UNIMOD:7]',
-    'Q[UNIMOD:7]',
-    'M[UNIMOD:35]',
-    'M[UNIMOD:35]',
-    'N[UNIMOD:7]',
-    'Q[UNIMOD:7]',
-    'S[UNIMOD:21]',
-    'T[UNIMOD:21]',
-    'Y[UNIMOD:21]',
-    'C[UNIMOD:4]',
-    'M[UNIMOD:35]',
-    'M[UNIMOD:35]',
-    '[UNIMOD:1]',
     '[Formula:H-2C1O1]',
-    'UNIMOD:4',
-    'UNIMOD:35',
-    'UNIMOD:1',
-    'UNIMOD:385',
     'UNIMOD:23',
-    'UNIMOD:4',
-    'UNIMOD:35',
-    'UNIMOD:5'
 ]
 
 EXTENSIONS = {

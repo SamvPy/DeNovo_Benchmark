@@ -100,7 +100,56 @@ def instanovo_parser(
 def instanovoplus_parser(
     result_path: str, mgf_path: str, mapping: dict, max_length=30, **kwargs
 ):
-    NotImplementedError()
+    result_path = os.path.splitext(result_path)[0] + ".csv"
+
+    # ASSUMPTION:
+    # The output of Instanovo has the same length and order
+    # (in terms of spectra) as the mgf-file
+    if mgf_path.lower().endswith('.mzml'):
+        mgf_file = mzml_reader(mgf_path)
+    else:
+        mgf_file = pd.DataFrame(pd.DataFrame(mgf.read(mgf_path))["params"].tolist())
+
+    result = pd.read_csv(result_path)
+    run = os.path.basename(result_path)
+
+    # Fuse the metadata of the spectra with result file
+    result["title"] = result["specid"]
+    joined_file = result.merge(mgf_file, on="title")
+
+    # Sanity check
+    assert len(joined_file) == len(result)
+
+    joined_file["peptidoform"] = joined_file.apply(
+        lambda x: str(x["diffusion_predictions"]) + "/" + str(int(x["precursor_charge"])), axis=1
+    )
+    joined_file["precursor_mz"] = joined_file["pepmass"].apply(lambda x: x[0])
+    joined_file["peptidoform"] = joined_file["peptidoform"].apply(
+        lambda x: parse_peptidoform(x, mapping, max_length)
+    )
+    joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
+
+    tqdm.pandas(desc='Parsing Instanovo+ results to PSMList')
+    psmlist = PSMList(
+        psm_list=joined_file.progress_apply(
+            lambda x: PSM(
+                peptidoform=x["peptidoform"],
+                spectrum_id=x["specid"],
+                run=run,
+                rank=x['rank'],
+                score=x["diffusion_log_probabilities"],
+                precursor_mz=x["precursor_mz"],
+                retention_time=x["rtinseconds"]/60,
+                source="InstaNovo+",
+                metadata={
+                    "base_prediction": x["source"],
+                    "base_peptidoform":str(x["transformer_predictions"]) + "/" + str(int(x["precursor_charge"]))},
+            ),
+            axis=1,
+        ).tolist()
+    )
+    return psmlist
+
 
 def instanovo_parser_legacy(
     result_path: str, mgf_path: str, mapping: dict, max_length=30, **kwargs

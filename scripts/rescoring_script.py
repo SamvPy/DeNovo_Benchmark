@@ -192,6 +192,7 @@ def apply_pipeline(config, filename, args=None):
         # Run this part if no rescored psmlist and features for the denovo psms are stored in save paths.
         else:
             logging.info(f"Loading {filename} from raw search results.")
+            logging.info(f"Parsing {path} of engine {engine}")
             parser = DenovoEngineConverter.select(engine)
             psm_list = parser.parse(
                 result_path=path,
