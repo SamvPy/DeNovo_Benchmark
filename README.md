@@ -1,3 +1,8 @@
+Note: There are probably still some issues with setup instructions and running parts of the pipeline. We are doing our best to solve these before publication of the manuscript. Additionally, we are working on clear documentation for both running the tools with NextFlow and using the Python API packages for adding matching features, loading in de novo results, and creating insightful figures related to relative performance depending on features of interest and error patterns.
+
+Preprint: 
+
+
 # Set up the de novo pipeline
 
 NOTE: The pipeline uses NextFlow, meaning if you work on Windows, you will need to install WSL and run it there. (https://learn.microsoft.com/en-us/windows/wsl/install)
