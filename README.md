@@ -1,6 +1,6 @@
 Note: There are probably still some issues with setup instructions and running parts of the pipeline. We are doing our best to solve these before publication of the manuscript. Additionally, we are working on clear documentation for both running the tools with NextFlow and using the Python API packages for adding matching features, loading in de novo results, and creating insightful figures related to relative performance depending on features of interest and error patterns.
 
-Preprint: 
+Preprint: https://www.biorxiv.org/content/10.1101/2025.08.19.671052v1
 
 
 # Set up the de novo pipeline
