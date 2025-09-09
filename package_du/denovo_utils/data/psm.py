@@ -86,7 +86,7 @@ class PSM:
 
         self.evaluation[metadata_score] = evaluation
 
-    def add_refinement(self, psm: 'PSM'):
+    def add_refinement(self, psm: 'PSM', overwrite=False):
         equal_sequence = psm == self
         metadata = psm.engine_name
 
@@ -94,7 +94,8 @@ class PSM:
             self.scores.add_score(
                 score=psm.scores.get_score(psm.engine_name),
                 metadata=metadata,
-                score_type='peptide'
+                score_type='peptide',
+                overwrite=overwrite
             )
             # Prevent saving duplicate psms if postprocessor didnt change the PSM
             psm=None

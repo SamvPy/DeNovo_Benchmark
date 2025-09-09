@@ -118,7 +118,7 @@ class Run:
             spectrum.add_psm(psm, is_ground_truth=is_ground_truth)
 
 
-    def load_refinement(self, psmlist):
+    def load_refinement(self, psmlist, overwrite=False):
        
         for psm_ in psmlist:
             spectrum = self.get_spectrum(psm_["spectrum_id"])
@@ -169,10 +169,11 @@ class Run:
                 psm.scores.add_score(
                     score=psm_['provenance_data']['score_ms2rescore'],
                     metadata='score_ms2rescore',
-                    score_type='peptide'
+                    score_type='peptide',
+                    overwrite=overwrite
                 )
         
-            psm_base.add_refinement(psm)
+            psm_base.add_refinement(psm, overwrite=overwrite)
             
             # Spectralis also rescores original identification. Add this to score object.
             if psm_["source"] == "Spectralis":
@@ -184,7 +185,7 @@ class Run:
                     score=init_score,
                     metadata="Spectralis",
                     score_type="peptide",
-                    overwrite=True
+                    overwrite=overwrite
                 )
 
     def load_spectralis_rescoring(self, df: pd.DataFrame):
