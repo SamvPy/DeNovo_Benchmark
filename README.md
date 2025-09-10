@@ -13,6 +13,13 @@ Run in command line
 ```
 git clone -b master https://github.com/SamvPy/DeNovo_Benchmark.git
 ```
+## Initialize git submodules
+
+Run in command line
+```
+git submodule update --init --recursive
+```
+
 
 ## Download conda
 

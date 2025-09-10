@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install the denovo_utils package in its own environment
-cd ../package || exit
+cd ../package_du || exit
 conda env create -f denovo_analysis_env.yaml
 conda activate denovo_analysis_env
 pip install .
@@ -37,7 +37,7 @@ for env_dir in ./*; do
 
     # Activate the environment
     echo "Activating environment $env_name..."
-    source activate "${env_name,,}_env"
+    conda activate "${env_name,,}_env"
 
     # casanovo requires different installation procedure
     if [[ "$env_name" == "casanovo" ]]; then
