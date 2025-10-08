@@ -33,6 +33,7 @@ process INSTANOVO {
 }
 
 process INSTANOVO_V1 {
+    conda "${params.conda_env_dir}/instanovo_env"
     maxForks params.maxforks_tool
     tag "Running InstaNovo_v1 on ${mgf_file.baseName}..."
 
@@ -50,7 +51,6 @@ process INSTANOVO_V1 {
 
     script:
         """
-        source /home/sam/instanovo_env_v2/bin/activate
         instanovo transformer predict \\
             --data-path=$mgf_file \\
             --output-path=${mgf_file.baseName}.instanovo.csv \\

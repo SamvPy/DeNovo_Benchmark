@@ -65,10 +65,10 @@ workflow RUN_TOOLS {
             config_casanovo = Channel.fromPath(params.config_casanovo)
 
             if (params.serialize) {
-                (casanovo_result, _, serializer) = CASANOVO(mgf_files, serializer, config_casanovo.first())
+                (casanovo_result, serializer) = CASANOVO(mgf_files, serializer, config_casanovo.first())
             }
             else {
-                (casanovo_result, _, _) = CASANOVO(mgf_files, serializer, config_casanovo.first())
+                (casanovo_result, _) = CASANOVO(mgf_files, serializer, config_casanovo.first())
             }
             results_all = results_all.concat(casanovo_result)
         }
