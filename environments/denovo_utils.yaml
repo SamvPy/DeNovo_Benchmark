@@ -82,6 +82,7 @@ dependencies:
       - darkdetect==0.8.0
       - deeplc==3.0.8
       - deeplcretrainer==1.0.0
+      - fastjsonschema==2.21.1
       - fastobo==0.12.3
       - flatbuffers==24.3.25
       - fonttools==4.53.0
@@ -109,6 +110,7 @@ dependencies:
       - markdown-it-py==3.0.0
       - markupsafe==3.0.2
       - matplotlib==3.9.0
+      - matplotlib-venn==1.1.2
       - mdurl==0.1.2
       - ml-dtypes==0.4.1
       - mokapot==0.10.0
@@ -116,6 +118,7 @@ dependencies:
       - ms2rescore==3.1.2
       - ms2rescore-rs==0.3.0
       - namex==0.0.8
+      - nbformat==5.10.4
       - nltk==3.9.1
       - numba==0.60.0
       - numpy==1.26.4
@@ -168,4 +171,3 @@ dependencies:
       - werkzeug==3.0.4
       - wrapt==1.16.0
       - xgboost==1.7.6
-prefix: /home/sam/miniconda3/envs/denovo_analysis_env
