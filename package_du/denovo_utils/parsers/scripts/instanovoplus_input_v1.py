@@ -95,6 +95,8 @@ class InstanovoPlusParser:
             result_path=self.result_path,
             mgf_path=self.mgf_path
         )
+        if len(psmlist) == 0:
+            return False
 
         df = self._parse_input_spectrum(psmlist)
         n_before_filter = len(df)
@@ -133,6 +135,7 @@ class InstanovoPlusParser:
         self.intitial_predictions = self._parse_input_predictions(
             df
         )
+        return True
 
     
     def write(self, filename = 'filename', out_dir = '.'):
@@ -166,8 +169,9 @@ def main(args):
         mgf_path=args.mgf_path,
         result_path=args.result_file
     )
-    in_parser.parse()
-    in_parser.write(os.path.basename(args.result_file).split('.')[0])
+    parsed = in_parser.parse()
+    if parsed:
+        in_parser.write(os.path.basename(args.result_file).split('.')[0])
 
 if __name__ == "__main__":
 

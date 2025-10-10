@@ -56,6 +56,5 @@ process INSTANOVO_V1 {
             --output-path=${mgf_file.baseName}.instanovo.csv \\
             --instanovo-model=${params.model_path_instanovo} \\
             --denovo
-        deactivate
         """
 }

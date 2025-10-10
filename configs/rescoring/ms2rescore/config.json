@@ -1,0 +1,32 @@
+{
+    "mgf_folder": "/home/samva/Doctorate/denovo_paper/DeNovo_Benchmark/test_data/mgf",
+    "ground_truth_folder": "/home/samva/Doctorate/denovo_paper/DeNovo_Benchmark/test_data/ground_truth",
+    "denovo_folder": "/home/samva/Doctorate/denovo_paper/data/denovo_output",
+    "postprocessing_folder": "/home/samva/Doctorate/denovo_paper/data/postprocessing",
+    "path_ms2rescore_config": "/home/samva/Doctorate/denovo_paper/DeNovo_Benchmark/configs/ms2rescore/config_default.json",
+    "ground_truth_engine": "parquet",
+    "regenerate": [],
+    "retrain_mokapot": true,
+    "output_folder": "/home/samva/Doctorate/denovo_paper/data/rescoring",
+    "file_type": "dir",
+    "filename": null,
+    "batches": false,
+    "only_gt_spectra": false,
+    "post_processors": [
+        "spectralis",
+        "instanovoplus"
+    ],
+    "engines": [
+        "casanovo",
+        "instanovo",
+        "contranovo",
+        "pepnet",
+        "adanovo",
+        "novob",
+        "pihelixnovo",
+        "piprimenovo"
+    ],
+    "filenames": [
+        "demo"
+    ]
+}

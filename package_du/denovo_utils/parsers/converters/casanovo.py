@@ -93,6 +93,8 @@ def casanovo_parser(
         lambda x: parse_peptidoform(x, mapping, max_length)
     )
     joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
+    if len(joined_file) == 0:
+        return PSMList(psm_list=[])
 
     # Check if ion mobility column is present (only when reading mzml files)
     if "ion_mobility" not in joined_file.columns:

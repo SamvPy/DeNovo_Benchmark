@@ -87,6 +87,8 @@ def piprimenovo_parser(
     joined_file["precursor_mz"] = joined_file["pepmass"].apply(lambda x: x[0])
 
     joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
+    if len(joined_file) == 0:
+        return PSMList(psm_list=[])
 
     # Check if ion mobility column is present (only when reading mzml files)
     if "ion_mobility" not in joined_file.columns:

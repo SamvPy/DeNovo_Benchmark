@@ -38,5 +38,7 @@ def adanovo_parser(
         max_length=max_length,
         im=im
     )
+    if len(psm_list) == 0:
+        return PSMList(psm_list=[])
     psm_list['source'] = ['AdaNovo'] * len(psm_list)
     return psm_list

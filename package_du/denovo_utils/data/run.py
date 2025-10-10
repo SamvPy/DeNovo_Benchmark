@@ -185,7 +185,7 @@ class Run:
                     score=init_score,
                     metadata="Spectralis",
                     score_type="peptide",
-                    overwrite=overwrite
+                    overwrite=True
                 )
 
     def load_spectralis_rescoring(self, df: pd.DataFrame):

@@ -92,6 +92,8 @@ def novob_parser(
         lambda x: select_top_PSM(x, max_length, mapping, run), axis=1
     )
     joined_file = joined_file.dropna()
+    if len(joined_file) == 0:
+        return PSMList(psm_list=[])
 
     psmlist = PSMList(psm_list=joined_file.tolist())
     return psmlist
@@ -158,6 +160,7 @@ def select_top_PSM(
             spectrum_id=x["title"],
             run=run,
             score=proba,
+            rank=1,
             precursor_mz=x["precursor_mz"],
             retention_time=x["rtinseconds"]/60,
             source="NovoB",

@@ -128,6 +128,8 @@ def instanovoplus_parser(
         lambda x: parse_peptidoform(x, mapping, max_length)
     )
     joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
+    if len(joined_file) == 0:
+        return PSMList(psm_list=[])
 
     tqdm.pandas(desc='Parsing Instanovo+ results to PSMList')
     psmlist = PSMList(

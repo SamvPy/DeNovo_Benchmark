@@ -61,6 +61,8 @@ def pepnet_parser(
         lambda x: parse_peptidoform(x, mapping, max_length)
     )
     joined_file = joined_file.dropna(subset=["peptidoform"]).reset_index(drop=True)
+    if len(joined_file) == 0:
+        return PSMList(psm_list=[])
 
     joined_file['rank'] = joined_file.groupby('title')['Score'].rank(
         ascending=False, method='dense'

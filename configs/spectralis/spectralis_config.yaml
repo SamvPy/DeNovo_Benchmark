@@ -6,8 +6,8 @@
 # binreclass_model_path: /home/samva/Doctorate/data_directory/denovo_project/checkpoints/spectralis/spectralis_bin_reclass.pt
 # scorer_path: /home/samva/Doctorate/data_directory/denovo_project/checkpoints/spectralis/spectralis_score.pkl
 
-binreclass_model_path: /public/compomics3/Sam/denovo_checkpoints/spectralis/spectralis_bin_reclass.pt
-scorer_path: /public/compomics3/Sam/denovo_checkpoints/spectralis/spectralis_score.pkl
+binreclass_model_path: /home/samva/Doctorate/denovo_paper/denovo_checkpoints/spectralis/spectralis_bin_reclass.pt
+scorer_path: /home/samva/Doctorate/denovo_paper/denovo_checkpoints/spectralis/spectralis_score.pkl
 
 
 ### BIN RECLASSIFICATION

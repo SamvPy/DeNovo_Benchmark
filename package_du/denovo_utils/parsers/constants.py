@@ -59,6 +59,10 @@ MODIFICATION_MAPPING = {
         "+57.0215": "UNIMOD:4",
         "+15.9949": "UNIMOD:35",
     },
+    "parquet": {
+        "+57.0215": "UNIMOD:4",
+        "+15.9949": "UNIMOD:35",
+    },
     "spectralis": {
         "M[UNIMOD:35]": "M[UNIMOD:35]",
         "C[UNIMOD:4]": "C[UNIMOD:4]",
