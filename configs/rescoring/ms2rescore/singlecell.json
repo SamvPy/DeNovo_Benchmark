@@ -1,0 +1,32 @@
+{
+    "mgf_folder": "/public/compomics3/Sam/PXD021882/mzml/selection",
+    "ground_truth_folder": "/public/compomics3/Sam/PXD021882/search_results/identification/selection",
+    "denovo_folder": "/public/compomics3/Sam/denovo_paper/PXD028735_QExactive/denovo_output",
+    "postprocessing_folder": "/public/compomics3/Sam/denovo_paper/PXD028735_QExactive/post_processing",
+    "path_ms2rescore_config": "/home/sam/benchmarking/DeNovo_Benchmark/configs/ms2rescore/config_default.json",
+    "ground_truth_engine": "sage",
+    "regenerate": [],
+    "retrain_mokapot": false,
+    "output_folder": "/public/compomics3/Sam/PXD021882/search_results/ms2rescore_fork",
+    "file_type": "dir",
+    "filename": null,
+    "batches": false,
+    "chimeric": false,
+    "only_gt_spectra": false,
+    "post_processors": [],
+    "engines": [],
+    "filenames": [
+        "HeLa_1cell_E12",
+        "HeLa_1cell_E14",
+        "HeLa_1cell_EF9",
+        "HeLa_10cell_G4",
+        "HeLa_10cell_G8",
+        "HeLa_10cell_H2",
+        "HeLa_150cell_I12",
+        "HeLa_150cell_I16",
+        "HeLa_150cell_I18",
+        "HeLa_500cell_J5",
+        "HeLa_500cell_K8",
+        "HeLa_500cell_K16"
+    ]
+}

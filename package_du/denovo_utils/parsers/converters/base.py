@@ -10,7 +10,7 @@ from ..exceptions import DenovoEngineNotSupported
 from .casanovo import casanovo_parser
 from .contranovo import contranovo_parser
 from .external import psmutils_parser
-from .instanovo import instanovo_parser, instanovoplus_parser
+from .instanovo import instanovo_parser_v11, instanovo_parser_v12, instanovoplus_parser
 from .novob import novob_parser
 from .novor import novor_parser
 from .pepnet import pepnet_parser
@@ -44,7 +44,8 @@ class DenovoEngineConverter(Enum):
     """
 
     CASANOVO = ("casanovo", casanovo_parser)
-    INSTANOVO = ("instanovo", instanovo_parser)
+    INSTANOVO_V11 = ("instanovo-v1.1", instanovo_parser_v11)
+    INSTANOVO_V12 = ("instanovo-v1.2", instanovo_parser_v12)
     INSTANOVOPLUS = ("instanovoplus", instanovoplus_parser)
     CONTRANOVO = ("contranovo", contranovo_parser)
     NOVOB = ("novob", novob_parser)
@@ -139,7 +140,8 @@ class DenovoEngineConverter(Enum):
         label : str
             The label of the de novo search engine. Options include:
             - 'casanovo'
-            - 'instanovo'
+            - 'instanovo-v1.1'
+            - 'instanovo-v1.2'
             - 'instanovoplus'
             - 'contranovo'
             - 'novob'

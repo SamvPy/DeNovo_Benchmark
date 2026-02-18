@@ -22,6 +22,29 @@ MODIFICATION_MAPPING = {
         "[UNIMOD:5]": "[UNIMOD:5]-",
         "[UNIMOD:385]": "[UNIMOD:385]-"
     },
+    "instanovo-v1.1": {
+        "C(+57.02)": "C[UNIMOD:4]",
+        # "C": "C[UNIMOD:4]",
+        "M(ox)": "M[UNIMOD:35]",
+        "M(+15.99)": "M[UNIMOD:35]",
+        "N(+.98)": "N[UNIMOD:7]",
+        "Q(+.98)": "Q[UNIMOD:7]",
+        "[UNIMOD:1]": "[UNIMOD:1]-",
+        "[UNIMOD:5]": "[UNIMOD:5]-",
+        "[UNIMOD:385]": "[UNIMOD:385]-"
+    },
+    # Actually writes in proforma
+    "instanovo-v1.2": {
+        "C(+57.02)": "C[UNIMOD:4]",
+        # "C": "C[UNIMOD:4]",
+        "M(ox)": "M[UNIMOD:35]",
+        "M(+15.99)": "M[UNIMOD:35]",
+        "N(+.98)": "N[UNIMOD:7]",
+        "Q(+.98)": "Q[UNIMOD:7]",
+        # "[UNIMOD:1]": "[UNIMOD:1]-",
+        # "[UNIMOD:5]": "[UNIMOD:5]-",
+        # "[UNIMOD:385]": "[UNIMOD:385]-"
+    },
     "contranovo": {
         # N-terminal only
         "+43.006-17.027": "[+25.980265]-",
@@ -205,6 +228,8 @@ EXTENSIONS = {
     "contranovo": ".mztab",
     "adanovo": ".mztab",
     "instanovo": ".csv",
+    "instanovo-v1.1": ".csv",
+    "instanovo-v1.2": ".csv",
     "novob": ".tsv",
     "pepnet": ".tsv",
     "novor": ".csv",

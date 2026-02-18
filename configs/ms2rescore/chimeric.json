@@ -64,7 +64,7 @@
         "psm_id_im_pattern": null,
         "lower_score_is_better": false,
         "max_psm_rank_input": 5000,
-        "max_psm_rank_output": 1,
+        "max_psm_rank_output": 5,
         "modification_mapping": {
             "+57.0214": "UNIMOD:4",
             "+0.984": "UNIMOD:35",

@@ -20,7 +20,8 @@ class PPMFeatures(FeatureGeneratorBase):
             "ppm_mean_y",
             "ppm_mean_b",
             "ppm_mean_by",
-            "ppm_precursor"
+            "ppm_precursor",
+            "experimental_mz"
         ]
 
     @property
@@ -54,8 +55,10 @@ class PPMFeatures(FeatureGeneratorBase):
             ).flatten()
             
             psm.rescoring_features.update({
+                'peptide_len': len(spectrum_vector.peptidoform),
                 "ppm_mean_y": -1 if np.isnan(ppm_y).all() else np.abs(np.nanmean(ppm_y)),
                 "ppm_mean_b": -1 if np.isnan(ppm_b).all() else np.abs(np.nanmean(ppm_b)),
                 "ppm_mean_all": -1 if np.isnan(ppm_all).all() else np.abs(np.nanmean(ppm_all)),
-                "ppm_precursor": np.abs(spectrum_vector.precursor_ppm)
+                "ppm_precursor": np.abs(spectrum_vector.precursor_ppm),
+                "experimental_mz": spectrum_vector.precursor_mz,
             })

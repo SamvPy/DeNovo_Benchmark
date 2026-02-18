@@ -1,32 +1,30 @@
 {
-    "mgf_folder": "/home/samva/Doctorate/denovo_paper/DeNovo_Benchmark/test_data/mgf",
-    "ground_truth_folder": "/home/samva/Doctorate/denovo_paper/DeNovo_Benchmark/test_data/ground_truth",
-    "denovo_folder": "/home/samva/Doctorate/denovo_paper/data/denovo_output",
-    "postprocessing_folder": "/home/samva/Doctorate/denovo_paper/data/postprocessing",
-    "path_ms2rescore_config": "/home/samva/Doctorate/denovo_paper/DeNovo_Benchmark/configs/ms2rescore/config_default.json",
-    "ground_truth_engine": "parquet",
+    "mgf_folder": "/public/compomics3/Sam/denovo_paper/PXD028735_QExactive/MGF/mgf",
+    "ground_truth_folder": "/public/compomics3/Sam/denovo_paper/PXD028735_QExactive/search_results/SAGE/default_optimized/identification",
+    "denovo_folder": "/public/compomics3/Sam/denovo_paper/PXD028735_QExactive/denovo_output",
+    "postprocessing_folder": "/public/compomics3/Sam/denovo_paper/PXD028735_QExactive/post_processing",
+    "path_ms2rescore_config": "/home/sam/benchmarking/DeNovo_Benchmark/configs/ms2rescore/config_default.json",
+    "ground_truth_engine": "sage",
     "regenerate": [],
-    "retrain_mokapot": true,
-    "output_folder": "/home/samva/Doctorate/denovo_paper/data/rescoring",
+    "retrain_mokapot": false,
+    "output_folder": "/public/compomics3/Sam/denovo_paper/PXD028735_QExactive/rescoring/default_optimized_allfeat",
     "file_type": "dir",
     "filename": null,
     "batches": false,
+    "chimeric": false,
     "only_gt_spectra": false,
-    "post_processors": [
-        "spectralis",
-        "instanovoplus"
-    ],
+    "post_processors": [],
     "engines": [
-        "casanovo",
-        "instanovo",
         "contranovo",
-        "pepnet",
         "adanovo",
-        "novob",
-        "pihelixnovo",
-        "piprimenovo"
+        "pihelixnovo"
     ],
     "filenames": [
-        "demo"
+        "LFQ_Orbitrap_DDA_Condition_A_Sample_Alpha_01",
+        "LFQ_Orbitrap_DDA_Condition_A_Sample_Alpha_02",
+        "LFQ_Orbitrap_DDA_Condition_A_Sample_Alpha_03",
+        "LFQ_Orbitrap_DDA_Condition_B_Sample_Alpha_01",
+        "LFQ_Orbitrap_DDA_Condition_B_Sample_Alpha_02",
+        "LFQ_Orbitrap_DDA_Condition_B_Sample_Alpha_03"
     ]
 }

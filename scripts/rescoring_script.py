@@ -67,7 +67,8 @@ def apply_pipeline(config, filename, args=None):
             psm_path=config['save_paths']['psm_path'],
             feature_path=config['save_paths']['feature_path']
         )
-        psm_list = psm_list.get_rank1_psms()
+        if not args['chimeric']:
+            psm_list = psm_list.get_rank1_psms()
 
         if len(args["regenerate"]) > 0:
             logging.info(f"Regenerating {args['regenerate']} features.")
@@ -98,7 +99,8 @@ def apply_pipeline(config, filename, args=None):
             result_path=config["psm_file"],
             mgf_path=config["spectrum_path"]
         )
-        psm_list = psm_list.get_rank1_psms()
+        if not args['chimeric']:
+            psm_list = psm_list.get_rank1_psms()
 
         # 2. Preprocess the psm_list for rescoring
         psm_list = rescorer.preprocess_psm_list(psm_list)
