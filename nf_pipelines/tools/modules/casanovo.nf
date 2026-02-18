@@ -1,5 +1,5 @@
 process CASANOVO {
-    conda "${params.conda_env_dir}/casanovo_env"
+    conda "${params.conda_env_dir}/casanovo_test_env"
     maxForks params.maxforks_tool
     tag "Running Casanovo on ${mgf_file.baseName}..."
 

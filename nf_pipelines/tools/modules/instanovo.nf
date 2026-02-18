@@ -51,7 +51,10 @@ process INSTANOVO_V1 {
 
     script:
         """
-        instanovo transformer predict \\
+        # Copy config files to the InstaNovo package directory, otherwise IN+ always takes preinstalled configs...
+        cp -r ./$config_instanovo/ \
+            ${params.conda_env_dir}/instanovo_env/lib/python3.12/site-packages/instanovo/
+        CUDA_VISIBLE_DEVICES=${params.instanovo_gpu_device} instanovo transformer predict \\
             --data-path=$mgf_file \\
             --output-path=${mgf_file.baseName}.instanovo.csv \\
             --instanovo-model=${params.model_path_instanovo} \\

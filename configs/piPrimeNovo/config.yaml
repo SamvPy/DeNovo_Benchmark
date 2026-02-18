@@ -21,10 +21,10 @@ n_peaks: 800
 min_mz: 1
 max_mz: 6500.0
 min_intensity: 0.0
-remove_precursor_tol: 1  # Da
+remove_precursor_tol: 2  # Da
 max_charge: 10
-precursor_mass_tol: 50  # 50 ppm
-isotope_error_range: [0, 1]
+precursor_mass_tol: 20  # 50 ppm
+isotope_error_range: [-1,2]
 
 # Model architecture options.
 dim_model:  400 #512

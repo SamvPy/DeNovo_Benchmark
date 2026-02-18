@@ -14,8 +14,8 @@ max_mz: 2500.0
 min_intensity: 0.01
 remove_precursor_tol: 2.0  # Da
 max_charge: 10
-precursor_mass_tol: 50  # ppm
-isotope_error_range: [0, 1]
+precursor_mass_tol: 20  # ppm
+isotope_error_range: [-1,2]
 
 # Model architecture options.
 dim_model: 512
@@ -25,7 +25,7 @@ n_layers: 9
 dropout: 0.18
 dim_intensity:
 custom_encoder:
-max_length: 50
+max_length: 30
 residues:
   "G": 57.021464
   "A": 71.037114
@@ -84,7 +84,7 @@ SWA: False #
 
 # Training/inference options.
 train_batch_size: 64
-predict_batch_size: 64
+predict_batch_size: 128
 # n_beams: 5
 n_beams: 5 # No beam search
 

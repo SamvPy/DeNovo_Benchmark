@@ -20,7 +20,7 @@ process NOVOB {
             NovoB.Prediction \\
                 -m ${params.model_path_novob} \\
                 -i $mgf_file \\
-                -b 16 \\
+                -b 128 \\
                 -g
         mv result.txt ${mgf_file.baseName}.novob.tsv
         """

@@ -8,7 +8,7 @@ warmup_iters: 100_000
 max_iters: 600_000
 
 train_batch_size: 32
-predict_batch_size: 1024
+predict_batch_size: 128
 
 #############
 residues:
@@ -49,9 +49,9 @@ max_mz: 2500.0
 min_intensity: 0.01
 remove_precursor_tol: 2.0 
 max_charge: 10
-precursor_mass_tol: 50  
-isotope_error_range: [0, 1]
-min_peptide_len: 6
+precursor_mass_tol: 20  
+isotope_error_range: [-1,2]
+min_peptide_len: 5
 dim_model: 512
 n_head: 8
 dim_feedforward: 1024
@@ -59,7 +59,7 @@ n_layers: 9
 dropout: 0.0
 dim_intensity:
 custom_encoder:
-max_length: 100
+max_length: 30
 
 
 n_log: 1

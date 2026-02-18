@@ -1,4 +1,4 @@
-name: casanovo_env
+name: casanovo_test_env
 channels:
   - defaults
 dependencies:

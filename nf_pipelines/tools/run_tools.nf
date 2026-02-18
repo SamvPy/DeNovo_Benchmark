@@ -75,8 +75,8 @@ workflow RUN_TOOLS {
 
         // INSTANOVO
         if (params.run_instanovo) {
-            config_instanovo = Channel.value(file(params.config_instanovo))
-
+            config_instanovo = Channel.fromPath(params.config_instanovo, type: 'dir')
+    
             if (params.serialize) {
                 (instanovo_result, serializer) = INSTANOVO(mgf_files, serializer, config_instanovo.first())
             }
@@ -171,9 +171,9 @@ workflow RUN_TOOLS {
 workflow {
 
     mgf_ch = Channel.fromPath(params.mgf_files)
-    serializer_ch = Channel.fromPath(params.serializer)
-
-    results_all = RUN_TOOLS(mgf_ch, serializer_ch.first())
+    serializer_file = file(params.serializer)
+    serializer_ch = Channel.value(serializer_file)
+    
+    results_all = RUN_TOOLS(mgf_ch, serializer_ch)
     results_all.collect().view()
-
 }
