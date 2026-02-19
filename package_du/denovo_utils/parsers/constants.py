@@ -22,7 +22,7 @@ MODIFICATION_MAPPING = {
         "[UNIMOD:5]": "[UNIMOD:5]-",
         "[UNIMOD:385]": "[UNIMOD:385]-"
     },
-    "instanovo-v1.1": {
+    "instanovo_v11": {
         "C(+57.02)": "C[UNIMOD:4]",
         # "C": "C[UNIMOD:4]",
         "M(ox)": "M[UNIMOD:35]",
@@ -34,7 +34,7 @@ MODIFICATION_MAPPING = {
         "[UNIMOD:385]": "[UNIMOD:385]-"
     },
     # Actually writes in proforma
-    "instanovo-v1.2": {
+    "instanovo_v12": {
         "C(+57.02)": "C[UNIMOD:4]",
         # "C": "C[UNIMOD:4]",
         "M(ox)": "M[UNIMOD:35]",
@@ -150,7 +150,8 @@ MODIFICATION_MAPPING = {
         "Qmod": "Q[UNIMOD:7]",
         "Nmod": "N[UNIMOD:7]",
         "Mmod": "M[UNIMOD:35]"
-    }
+    },
+    "msgf": {}
 }
 
 
@@ -228,8 +229,8 @@ EXTENSIONS = {
     "contranovo": ".mztab",
     "adanovo": ".mztab",
     "instanovo": ".csv",
-    "instanovo-v1.1": ".csv",
-    "instanovo-v1.2": ".csv",
+    "instanovo_v12": ".csv",
+    "instanovo_v11": ".csv",
     "novob": ".tsv",
     "pepnet": ".tsv",
     "novor": ".csv",
@@ -242,7 +243,8 @@ EXTENSIONS = {
     "pihelixnovo": ".tsv",
     "piprimenovo": ".tsv",
     "deepnovo": ".tsv",
-    "parquet": ".parquet"
+    "parquet": ".parquet",
+    "msgf": ".parquet"
 }
 
 
@@ -309,6 +311,7 @@ ENGINES = [
     "PepNovo+",
     "percolator",
     "sage",
+    "MSGF+"
 ]
 ENGINES_MAPPING = {
     "Casanovo4.2.0": "casanovo",
@@ -320,6 +323,7 @@ ENGINES_MAPPING = {
     "PepNovo+": "pepnovo",
     "percolator": "percolator",
     "sage": "sage",
+    "MSGF+": "msgf"
 }
 
 ### PEPNOVO STUFF

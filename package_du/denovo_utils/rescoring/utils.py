@@ -55,7 +55,7 @@ def parse_config_paths(
                 if len(p) < len(psm_file_path):
                     psm_file_path = p
             paths[0] = psm_file_path
-            logger.warning(f'Multiple files matching {psm_file_path}. Taking {p}.')
+            logger.warning(f'Multiple files matching {psm_file_path}. Taking {psm_file_path}.')
         psm_file_path = paths[0]
 
         if not os.path.exists(mgf_path) or not os.path.exists(psm_file_path):

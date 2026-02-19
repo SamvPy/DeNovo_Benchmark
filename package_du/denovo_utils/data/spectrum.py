@@ -6,21 +6,29 @@ class Spectrum:
     def __init__(self, spectrum_id, **properties):
         self.spectrum_id = spectrum_id
         self.properties = properties
-        self.psm_gt: Optional[PSM] = None
+        self.psm_gt: Optional[List[PSM]] = []
         self.psm_candidates: Optional[List[PSM]] = []  # List to hold multiple PSMs associated with this spectrum
 
     def __repr__(self):
-        str_repr = "Spectrum ID: {}\nGround-truth: {} ({})".format(
-            self.spectrum_id,
-            self.psm_gt.peptide_evidence,
-            self.psm_gt.scores
-        )
-        str_repr += "\nCandidates:"
-        for psm_candidate in self.psm_candidates:
-            str_repr += "\n\t{} ({})".format(
+        str_repr = []
+        str_repr.append(f'Spectrum ID: {self.spectrum_id}')
+        str_repr.append('Ground-truths:')
+        str_repr.append('--------------')
+        for i, psm in enumerate(self.psm_gt):
+            str_repr.append('\t1. {} ({})'.format(
+                self.psm.peptide_evidence,
+                self.psm.scores
+            ))
+
+        str_repr.append('Candidates:')
+        str_repr.append('-----------')
+
+        for i, psm_candidate in enumerate(self.psm_candidates):
+            str_repr.append("\n\t{}. {} ({})".format(
+                i,
                 psm_candidate.peptide_evidence,
                 psm_candidate.scores
-            )
+            ))
         return str_repr
     
     def __len__(self):
@@ -28,7 +36,7 @@ class Spectrum:
 
     def add_psm(self, psm: PSM, is_ground_truth=False):
         if is_ground_truth:
-            self.psm_gt = psm
+            self.psm_gt.append(psm)
         else:
             self.psm_candidates.append(psm)
     
@@ -52,6 +60,7 @@ class Spectrum:
     
     def compare_gt(self, metadata_score, refinements=None, ignore_score=False):
 
+        # TODO: fix
         if self.psm_gt is None:
             return
 

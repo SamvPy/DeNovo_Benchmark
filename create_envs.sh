@@ -94,15 +94,15 @@ setup_env "denovo_analysis_env" "denovo_utils.yaml" "ms2rescore" "../package_du 
 #########################################
 ### INSTALL DE NOVO TOOL ENVIRONMENTS ###
 #########################################
-setup_env "adanovo_env"      "adanovo.yaml"      "adanovo_v1"
-setup_env "casanovo_env"     "casanovo.yaml"     ""
-setup_env "contranovo_env"   "contranovo.yaml"   "ContraNovo"
-setup_env "instanovo_env"    "instanovo.yaml"    ""
-setup_env "novob_env"        "novob.yaml"        "NovoB"
-setup_env "pepnet_env"       "pepnet.yaml"       "PepNet"
-setup_env "pihelixnovo_env"  "pihelixnovo.yaml"  "pi-HelixNovo"
-setup_env "piprimenovo_env"  "piprimenovo.yaml"  "pi-PrimeNovo"
-setup_env "spectralis_env"   "spectralis.yaml"   "spectralis"
+# setup_env "adanovo_env"      "adanovo.yaml"      "adanovo_v1"
+# setup_env "casanovo_env"     "casanovo.yaml"     ""
+# setup_env "contranovo_env"   "contranovo.yaml"   "ContraNovo"
+# setup_env "instanovo_env"    "instanovo.yaml"    ""
+# setup_env "novob_env"        "novob.yaml"        "NovoB"
+# setup_env "pepnet_env"       "pepnet.yaml"       "PepNet"
+# setup_env "pihelixnovo_env"  "pihelixnovo.yaml"  "pi-HelixNovo"
+# setup_env "piprimenovo_env"  "piprimenovo.yaml"  "pi-PrimeNovo"
+# setup_env "spectralis_env"   "spectralis.yaml"   "spectralis"
 
 echo "==============================================="
 echo "✅ All environments processed successfully."

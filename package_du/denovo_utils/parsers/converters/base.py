@@ -21,6 +21,7 @@ from .pihelixnovo import pihelixnovo_parser
 from .spectralis import spectralis_parser
 from .adanovo import adanovo_parser
 from .deepnovo import deepnovo_parser
+from .msgf import msgf_parser
 
 # Define supported parsers for de novo search engines as
 # an Enum with associated parser functions
@@ -44,8 +45,8 @@ class DenovoEngineConverter(Enum):
     """
 
     CASANOVO = ("casanovo", casanovo_parser)
-    INSTANOVO_V11 = ("instanovo-v1.1", instanovo_parser_v11)
-    INSTANOVO_V12 = ("instanovo-v1.2", instanovo_parser_v12)
+    INSTANOVO_V11 = ("instanovo_v11", instanovo_parser_v11)
+    INSTANOVO_V12 = ("instanovo_v12", instanovo_parser_v12)
     INSTANOVOPLUS = ("instanovoplus", instanovoplus_parser)
     CONTRANOVO = ("contranovo", contranovo_parser)
     NOVOB = ("novob", novob_parser)
@@ -59,6 +60,7 @@ class DenovoEngineConverter(Enum):
     ADANOVO = ("adanovo", adanovo_parser)
     PMSUTILS = ("psm-utils", psmutils_parser)
     DEEPNOVO = ("deepnovo", deepnovo_parser)
+    MSGF = ("msgf", msgf_parser)
 
     def __init__(self, label: str, parser_func: callable) -> None:
         """
@@ -140,8 +142,8 @@ class DenovoEngineConverter(Enum):
         label : str
             The label of the de novo search engine. Options include:
             - 'casanovo'
-            - 'instanovo-v1.1'
-            - 'instanovo-v1.2'
+            - 'instanovo-v11'
+            - 'instanovo-v12'
             - 'instanovoplus'
             - 'contranovo'
             - 'novob'
@@ -152,6 +154,7 @@ class DenovoEngineConverter(Enum):
             - 'piprimenovo'
             - 'pihelixnovo'
             - 'spectralis'
+            - 'msgf' (custom by taking into account special modification combination [+25.98]-)
             - 'psm-utils' or any engine supported within psm-utils, e.g. sage.
 
         Returns
