@@ -58,14 +58,14 @@ process INSTANOVO_PLUS {
         else
         # Copy config files to the InstaNovo package directory, otherwise IN+ always takes preinstalled configs...
             cp -r ./$config_instanovo/ \
-            ${params.conda_env_dir}/instanovo_env/lib/python3.12/site-packages/instanovo/
+            ${params.conda_env_dir}/instanovo_env/lib/python3.12/site-packages/instanovo/utils/
 
-            instanovo diffusion predict \\
+            CUDA_VISIBLE_DEVICES=${params.instanovo_gpu_device} instanovo diffusion predict \\
                 --data-path "./$input_file" \\
                 --output-path "./${input_file.baseName}.csv" \\
-                instanovo_predictions_path="./$init_predictions" \\
-                --config-path="./configs/inference_test" \\
-                --config-name="instanovoplus.yaml"
+                --config-name="instanovoplus.yaml" \\
+                refinement_path="./$init_predictions" \\
+                instanovo_predictions_path="./$init_predictions"
         fi
         """
 }
@@ -172,7 +172,7 @@ process INSTANOVO_PLUS_LEGACY {
             -m ${params.model_path_instanovo_diffusion} \\
             -c $mapping_file \\
             -o ${params.denovo_results_dir}/instanovoplus/${engine} \\
-            -d ${params.gpu_device}
+            -d ${params.instanovo_gpu_device}
         """
 }
 

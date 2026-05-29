@@ -16,7 +16,7 @@ process PEPNET {
     
     script:
         """
-        python -m \\
+        CUDA_VISIBLE_DEVICES=${params.gpu_pepnet} python -m \\
             PepNet.denovo \\
                 --input $mgf_file \\
                 --model ${params.model_path_pepnet} \\

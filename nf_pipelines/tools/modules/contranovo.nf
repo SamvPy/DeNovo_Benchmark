@@ -17,7 +17,7 @@ process CONTRANOVO {
 
     script:
         """
-        python -m \\
+        CUDA_VISIBLE_DEVICES=${params.gpu_contranovo} python -m \\
             ContraNovo.ContraNovo \\
                 --mode=denovo \\
                 --config=$config_contranovo \\

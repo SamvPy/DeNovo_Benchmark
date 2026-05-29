@@ -17,7 +17,7 @@ process ADANOVO {
 
     script:
         """
-        python -m \\
+        CUDA_VISIBLE_DEVICES=${params.gpu_adanovo} python -m \\
             AdaNovo.adanovo \\
                 --mode=denovo \\
                 --model=${params.model_path_adanovo} \\

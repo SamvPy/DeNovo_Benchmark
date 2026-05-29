@@ -17,7 +17,7 @@ process PIPRIMENOVO {
 
     script:
         """
-        python -m \\
+        CUDA_VISIBLE_DEVICES=${params.gpu_piprimenovo} python -m \\
             PrimeNovo.PrimeNovo \\
                 --mode=denovo \\
                 --config=$config_primenovo \\
