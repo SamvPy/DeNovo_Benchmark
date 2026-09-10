@@ -2,11 +2,12 @@ from typing import List, Optional, Union
 import numpy as np
 from .psm import PSM
 
+
 class Spectrum:
     def __init__(self, spectrum_id, **properties):
         self.spectrum_id = spectrum_id
         self.properties = properties
-        self.psm_gt: Optional[List[PSM]] = []
+        self.psm_gold_standard: Optional[List[PSM]] = []
         self.psm_candidates: Optional[List[PSM]] = []  # List to hold multiple PSMs associated with this spectrum
 
     def __repr__(self):
@@ -14,29 +15,32 @@ class Spectrum:
         str_repr.append(f'Spectrum ID: {self.spectrum_id}')
         str_repr.append('Ground-truths:')
         str_repr.append('--------------')
-        for i, psm in enumerate(self.psm_gt):
-            str_repr.append('\t1. {} ({})'.format(
-                self.psm.peptide_evidence,
-                self.psm.scores
+        for i, psm in enumerate(self.psm_gold_standard):
+            str_repr.append('\t{}\t{}. {} ({})'.format(
+                psm.engine_name,
+                i,
+                psm.peptide_evidence,
+                psm.scores
             ))
 
-        str_repr.append('Candidates:')
+        str_repr.append('\nCandidates:')
         str_repr.append('-----------')
 
         for i, psm_candidate in enumerate(self.psm_candidates):
-            str_repr.append("\n\t{}. {} ({})".format(
+            str_repr.append("\t{}\t{}. {} ({})".format(
+                psm_candidate.engine_name,
                 i,
                 psm_candidate.peptide_evidence,
                 psm_candidate.scores
             ))
-        return str_repr
+        return "\n".join(str_repr)
     
     def __len__(self):
         return len(self.psm_candidates)
 
-    def add_psm(self, psm: PSM, is_ground_truth=False):
-        if is_ground_truth:
-            self.psm_gt.append(psm)
+    def add_psm(self, psm: PSM, is_gold_standard=False):
+        if is_gold_standard:
+            self.psm_gold_standard.append(psm)
         else:
             self.psm_candidates.append(psm)
     
@@ -58,19 +62,21 @@ class Spectrum:
     def get_psms_by_engine(self, engine_name):
         return [psm for psm in self.psm_candidates if psm.engine_name == engine_name]
     
-    def compare_gt(self, metadata_score, refinements=None, ignore_score=False):
+    def compare_gold_standard(self, metadata_score, refinements=None, ignore_score=False, ignore_IL=True):
 
         # TODO: fix
-        if self.psm_gt is None:
+        if self.psm_gold_standard is []:
             return
 
         for psm in self.psm_candidates:
-            psm.compare(
-                psm_gt=self.psm_gt,
-                metadata_score=metadata_score,
-                refinements=refinements,
-                ignore_score=ignore_score
-            )
+            for psm_gs in self.psm_gold_standard:
+                psm.compare(
+                    psm_gt=psm_gs,
+                    metadata_score=metadata_score,
+                    refinements=refinements,
+                    ignore_score=ignore_score,
+                    ignore_IL=ignore_IL
+                )
 
     @property
     def engines(self):

@@ -8,7 +8,7 @@ import multiprocessing
 
 from rustyms import RawSpectrum, LinearPeptide, FragmentationModel
 
-NEUTRON_MASS = 1.00866491606
+NEUTRON_MASS = 1.0033
 
 def fragments_to_polars(fragment_list, ion_types, neutral_losses, mz_array=None, intensity_array=None):
     # Can be done way quicker!

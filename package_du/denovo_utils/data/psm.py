@@ -1,5 +1,7 @@
 from ..analysis.metrics import aa_match, convert_peptidoform, mass_diff
 import numpy as np
+from psm_utils import Peptidoform
+
 
 class PSM:
     def __init__(
@@ -8,19 +10,22 @@ class PSM:
             score,
             engine_name,
             rank,
+            score_name=None,
             aa_score = None,
             is_ground_truth=False,
             peptide_evidence=None
         ):
         self.peptidoform = peptidoform  # The identified sequence
-        self.scores = Score(score, engine_name)  # Confidence score or probability
-        self.scores.add_score(aa_score, engine_name, score_type='aa')
+        if score_name is None:
+            score_name = engine_name
+        self.scores = Score(score, score_name)  # Confidence score or probability
+        self.scores.add_score(aa_score, score_name, score_type='aa')
         self.engine_name = engine_name  # The tool that generated the PSM
         self.rank = rank
         self.is_ground_truth = is_ground_truth  # Whether this is the ground truth PSM
         self.peptide_evidence = peptide_evidence
         self.refinement = {}
-        self.evaluation = {}
+        self.evaluations = {}
         self.metadata = {}
 
     def __eq__(self, psm: 'PSM'):
@@ -55,13 +60,13 @@ class PSM:
             'engine_name': self.engine_name,
             'peptide_evidence': self.peptide_evidence,
             'refinement': self.refinement,
-            'evaluation': self.evaluation
+            'evaluation': self.evaluations
         }
 
     def add_peptide_evidence(self, peptide_evidence):
         self.peptide_evidence = peptide_evidence
 
-    def compare(self, psm_gt: 'PSM', metadata_score, refinements=None, tolerance=.02, ignore_score=False):
+    def compare(self, psm_gt: 'PSM', metadata_score, refinements=None, tolerance=.02, ignore_score=False, ignore_IL=True):
         # Recursively compare the refinements of the base PSM with ground truth
         if refinements is not None:
             for refinement in refinements:
@@ -82,9 +87,10 @@ class PSM:
         )
         # Perform the evaluation against a ground-truth
         evaluation = Evaluation(gt_name=psm_gt.engine_name, other_name=self.engine_name)
-        evaluation.evaluate(psm_gt, self, score_gt, score)
+        evaluation.evaluate(psm_gt, self, score_gt, score, ignore_IL=ignore_IL)
 
-        self.evaluation[metadata_score] = evaluation
+        self.evaluations[psm_gt.rank] = {metadata_score: evaluation}
+
 
     def add_refinement(self, psm: 'PSM', overwrite=False):
         equal_sequence = psm == self
@@ -101,6 +107,7 @@ class PSM:
             psm=None
 
         self.refinement[metadata] = (psm, equal_sequence)
+
 
 
 class Score:
@@ -167,15 +174,23 @@ class Evaluation:
             "score_diff": self.score_diff
         }
 
-    def evaluate(self, psm_1, psm_2, score_1, score_2):
+    def evaluate(self, psm_1, psm_2, score_1, score_2, ignore_IL=True):
         evaluate_isobars = True
 
         if isinstance(score_1, float) and isinstance(score_2, float):
             self.score_diff = round(score_2 - score_1, 3)
 
-        if psm_1.peptidoform == psm_2.peptidoform:
-            self.error_type = 'match'
-            return
+        if ignore_IL:
+            if (
+                leucine_to_isoleucine(psm_1.peptidoform) == 
+                leucine_to_isoleucine(psm_2.peptidoform)
+            ):
+                self.error_type = 'match'
+                return
+        else:
+            if psm_1.peptidoform == psm_2.peptidoform:
+                self.error_type = 'match'
+                return
 
         _, pep_match, (match_1, match_2), iso_errs, tols = aa_match(
             convert_peptidoform(psm_1.peptidoform),
@@ -275,3 +290,6 @@ def filter_out_indices(sequence, index_pairs):
     filtered_sequence.extend(sequence[current_position:])
     
     return np.array(filtered_sequence)
+
+def leucine_to_isoleucine(peptidoform):
+    return Peptidoform(peptidoform.proforma.replace("L", "I"))

@@ -4,6 +4,8 @@ from nltk import edit_distance
 from Levenshtein import editops # To track actions for transpositions
 from pyteomics.mass import calculate_mass
 import numpy as np
+from tqdm import tqdm
+import pandas as pd
 import logging
 
 logger = logging.getLogger(__name__)
@@ -319,6 +321,8 @@ class SequenceComparison:
                 collection_forward=self.collection_merged['forward'],
                 collection_backward=self.collection_merged['backward']
             )
+        else:
+            self.collection_merged = collection_merged
 
         # 7. Parse the collected tags into a nicely printable format
         # This also adds mass differences for the tags
@@ -748,3 +752,86 @@ class TagMerger:
 
         # I need to annotate the sequence comparison here !
         return {'forward': new_tags_forward, 'backward': new_tags_backward}
+
+def retrieve_comparison(psm_source, psm_target, with_evidence=True):
+    sc = SequenceComparison(
+        identifier=None,
+        peptide_source=psm_source.peptidoform,
+        peptide_target=psm_target.peptidoform
+    )
+    sc.add_evidence(
+        evidence_source=psm_source.peptide_evidence,
+        evidence_target=psm_target.peptide_evidence
+    )
+    sc.calculate_distance()
+    sc.annotate_tags(with_evidence=with_evidence)
+    if not sc.symmetric:
+        return sc, False
+    return sc, True
+
+def has_good_eval(psm_candidate, good_labels=['match', 'isobaric_aa']):
+    for evaluation in psm_candidate.evaluations.values():
+        if evaluation['score_ms2rescore'].error_type in good_labels:
+            return True
+    return False
+
+def select_closest_comparison(comparisons):
+    lowest_L = 50
+    selected = None
+    for comparison in comparisons.values():
+        if lowest_L > comparison.to_dict()['damerau-levenshtein']:
+            selected = comparison
+
+    return selected
+
+def set_index_as_identifier(row):
+    if row['comparison_closest'] is not None:
+        row['comparison_closest'].identifier = row['index']
+
+def build_comparison_table(run, with_evidence=True):
+    comparisons = []
+
+    for spectrum_id, spectrum in tqdm(run.spectra.items(), desc=f'Calculating sequence distance for de novo PSMs'):
+        
+        for candidate in spectrum.psm_candidates:
+
+            comparison_sample = {
+                'psm_denovo': candidate,
+                'psm_gs': None,
+                'symmetric': None,
+                'comparison': None,
+                'spectrum_id': spectrum_id,
+                'model': candidate.engine_name,
+            }
+
+            if has_good_eval(candidate, good_labels=['match', 'isobaric_aa']):
+                comparisons.append(comparison_sample)
+                continue
+
+            scs = {}
+            sms = {}
+            
+            for psm_gs in spectrum.psm_gold_standard:
+                sc, symmetry = retrieve_comparison(
+                    psm_source=psm_gs,
+                    psm_target=candidate,
+                    with_evidence=with_evidence
+                )
+                scs[psm_gs.peptidoform.proforma] = sc
+                sms[psm_gs.peptidoform.proforma] = symmetry
+            
+            comparison_sample['comparison'] = scs
+            comparison_sample['symmetric'] = sms
+            comparisons.append(comparison_sample)
+    
+    comparisons_df = pd.DataFrame(comparisons)
+    comparisons_df = comparisons_df.dropna(subset=['comparison']).reset_index(drop=True).reset_index()
+    comparisons_df['comparison_closest'] = comparisons_df['comparison'].apply(select_closest_comparison)
+    _ = comparisons_df.reset_index().apply(set_index_as_identifier, axis=1)
+
+    df = pd.merge(
+        pd.DataFrame(comparisons_df.comparison_closest.apply(lambda x: x.to_dict()).to_list()),
+        comparisons_df,
+        on='index'
+    )
+    return df
